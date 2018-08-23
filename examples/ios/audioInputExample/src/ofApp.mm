@@ -1,5 +1,4 @@
-
-#import <AVFoundation/AVFoundation.h>
+/* Please refer to the README.md in the example's root folder for more information on usage */
 
 #include "ofApp.h"
 
@@ -30,7 +29,7 @@ void ofApp::setup(){
 	// 1 buffer
 	ofSoundStreamSetup(0, 1, this, sampleRate, initialBufferSize, 1);
     
-    sound.loadSound("sounds/beat.caf");
+    sound.load("sounds/beat.caf");
     sound.setLoop(true);
     sound.play();
     sound.setVolume(0);

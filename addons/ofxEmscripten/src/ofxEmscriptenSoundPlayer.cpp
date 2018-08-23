@@ -9,6 +9,8 @@
 #include "html5audio.h"
 #include "ofUtils.h"
 
+using namespace std;
+
 vector<float> ofxEmscriptenSoundPlayer::systemSpectrum;
 
 int ofxEmscriptenAudioContext(){
@@ -37,15 +39,16 @@ ofxEmscriptenSoundPlayer::~ofxEmscriptenSoundPlayer(){
 }
 
 
-bool ofxEmscriptenSoundPlayer::loadSound(string fileName, bool stream){
+bool ofxEmscriptenSoundPlayer::load(const std::filesystem::path& fileName, bool stream){
 	if(context!=-1){
 		sound = html5audio_sound_load(context,ofToDataPath(fileName).c_str());
 	}
 	return sound!=-1;
 }
 
-void ofxEmscriptenSoundPlayer::unloadSound(){
-
+void ofxEmscriptenSoundPlayer::unload(){
+	html5audio_sound_free(sound);
+	sound = -1;
 }
 
 void ofxEmscriptenSoundPlayer::play(){
@@ -129,7 +132,7 @@ void ofxEmscriptenSoundPlayer::setPositionSecs(double s){
 }
 
 
-float ofxEmscriptenSoundPlayer::getPosition(){
+float ofxEmscriptenSoundPlayer::getPosition() const{
 	double duration = getDurationSecs() / speed;
 	if(duration>0){
 		return html5audio_sound_position(sound)/duration;
@@ -138,7 +141,7 @@ float ofxEmscriptenSoundPlayer::getPosition(){
 	}
 }
 
-int ofxEmscriptenSoundPlayer::getPositionMS(){
+int ofxEmscriptenSoundPlayer::getPositionMS() const{
 	if(sound!=-1){
 		return html5audio_sound_position(sound)*1000;
 	}else{
@@ -146,27 +149,27 @@ int ofxEmscriptenSoundPlayer::getPositionMS(){
 	}
 }
 
-bool ofxEmscriptenSoundPlayer::getIsPlaying(){
+bool ofxEmscriptenSoundPlayer::isPlaying() const{
 	return playing && !html5audio_sound_done(sound);
 }
 
-float ofxEmscriptenSoundPlayer::getSpeed(){
+float ofxEmscriptenSoundPlayer::getSpeed() const{
 	return speed;
 }
 
-float ofxEmscriptenSoundPlayer::getPan(){
+float ofxEmscriptenSoundPlayer::getPan() const{
 	return 0;
 }
 
-bool ofxEmscriptenSoundPlayer::isLoaded(){
-	return sound!=-1;
+bool ofxEmscriptenSoundPlayer::isLoaded() const{
+	return html5audio_sound_is_loaded(sound);
 }
 
-float ofxEmscriptenSoundPlayer::getVolume(){
+float ofxEmscriptenSoundPlayer::getVolume() const{
 	return volume;
 }
 
-int ofxEmscriptenSoundPlayer::getDurationMS(){
+int ofxEmscriptenSoundPlayer::getDurationMS() const{
 	if(sound!=-1){
 		return html5audio_sound_duration(sound) * 1000;
 	}else{
@@ -174,7 +177,7 @@ int ofxEmscriptenSoundPlayer::getDurationMS(){
 	}
 }
 
-double ofxEmscriptenSoundPlayer::getDurationSecs(){
+double ofxEmscriptenSoundPlayer::getDurationSecs() const{
 	if(sound!=-1){
 		return html5audio_sound_duration(sound);
 	}else{

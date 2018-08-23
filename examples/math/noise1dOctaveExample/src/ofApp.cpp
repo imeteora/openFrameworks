@@ -195,7 +195,7 @@ void ofApp::render1DNoiseStrip (float x, float y, float width, float height, flo
 	
 	// Draw the black line of the noise waveform
 	ofNoFill();
-	ofSetColor(0,0,0); 
+	ofSetColor(255,0,0);
 	ofBeginShape();	
 	for (int i=0; i<NOISE_DATA_STRIP_LENGTH; i++){
 		float px = ofMap(i, 0,(NOISE_DATA_STRIP_LENGTH-1), width,0); 
@@ -248,6 +248,16 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseEntered(int x, int y){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseExited(int x, int y){
 
 }
 

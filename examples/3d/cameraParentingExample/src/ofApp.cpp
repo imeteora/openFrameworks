@@ -112,7 +112,7 @@ void ofApp::draw(){
 	for(int i=0; i<kNumCameras; i++) {
 		
 		// lookat node if it has one
-		if(lookatIndex[i] >= 0) cam[i].lookAt(testNodes[lookatIndex[i]]);
+		if(lookatIndex[i] >= 0) cam[i].lookAt(testNodes[lookatIndex[i]], {0.f,1.f,0.f});
 		
 		// mouse orbit camera
 		if(doMouseOrbit[i] && ofGetMousePressed(0)) {
@@ -123,9 +123,9 @@ void ofApp::draw(){
 			lat = ofClamp(lat + mouseY - ofGetPreviousMouseY(), -90, 90);
 			
 			if(lookatIndex[i] < 0) {
-				cam[i].orbit(lon, lat, orbitRadius);
+				cam[i].orbitDeg(lon, lat, orbitRadius);
 			} else {
-				cam[i].orbit(lon, lat, orbitRadius, testNodes[lookatIndex[1]]);
+				cam[i].orbitDeg(lon, lat, orbitRadius, testNodes[lookatIndex[1]]);
 			}
 		}
 		
@@ -177,23 +177,23 @@ void ofApp::keyPressed(int key){
 	switch(key) {
 		case 'c':
 			camToConfigure = 1 - camToConfigure;
-			printf("\n\n** MOVING CAMERA %i **\n", camToConfigure);
+			cout << "\n\n** MOVING CAMERA " + ofToString(camToConfigure) + "**\n";
 			break;
 			
 		case 'v':
 			camToView = 1 - camToView;
-			printf("\n\n** SHOWING CAMERA %i **\n", camToView);
+			cout << "\n\n** SHOWING CAMERA " + ofToString(camToView) + "**\n";
 			break;
 			
 			
-		case OF_KEY_LEFT: n->pan(kRotInc); break;
-		case OF_KEY_RIGHT: n->pan(-kRotInc); break;
+		case OF_KEY_LEFT: n->panDeg(kRotInc); break;
+		case OF_KEY_RIGHT: n->panDeg(-kRotInc); break;
 			
-		case OF_KEY_UP: n->tilt(-kRotInc); break;
-		case OF_KEY_DOWN: n->tilt(kRotInc); break;
+		case OF_KEY_UP: n->tiltDeg(-kRotInc); break;
+		case OF_KEY_DOWN: n->tiltDeg(kRotInc); break;
 			
-		case ',': n->roll(kRotInc); break;
-		case '.': n->roll(-kRotInc); break;
+		case ',': n->rollDeg(kRotInc); break;
+		case '.': n->rollDeg(-kRotInc); break;
 			
 		case 'a': n->truck(-kMoveInc); break;
 		case 'd': n->truck(kMoveInc); break;
@@ -251,12 +251,12 @@ void ofApp::keyPressed(int key){
 			
 	}
 	
-	printf("\n** MOVING CAMERA %i **\n", camToConfigure);
-	printf("POSITION: %f %f %f\n", n->getX(), n->getY(), n->getZ());
-	printf("X-AXIS: %f %f %f\n", n->getXAxis().x, n->getXAxis().y, n->getXAxis().z);
-	printf("Y-AXIS: %f %f %f\n", n->getYAxis().x, n->getYAxis().y, n->getYAxis().z);
-	printf("Z-AXIS: %f %f %f\n", n->getZAxis().x, n->getZAxis().y, n->getZAxis().z);
-	
+	cout << "\n** MOVING CAMERA " << ofToString(camToConfigure) << " **\n";  
+	cout << "POSITION: "+ ofToString(n->getX()) + " " + ofToString(n->getY()) + " " + ofToString(n->getZ()) + "\n";
+	cout << "X-AXIS: " + ofToString(n->getXAxis().x) + " " + ofToString(n->getXAxis().y) + " " + ofToString(n->getXAxis().z) + "\n";
+	cout << "Y-AXIS: " + ofToString(n->getYAxis().x) + " " + ofToString(n->getYAxis().y) + " " + ofToString(n->getYAxis().z) + "\n";
+	cout << "Z-AXIS: " + ofToString(n->getZAxis().x) + " " + ofToString(n->getZAxis().y) + " " + ofToString(n->getZAxis().z) + "\n";
+
 }
 
 //--------------------------------------------------------------
@@ -281,6 +281,16 @@ void ofApp::mousePressed(int x, int y, int button){
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
 	
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseEntered(int x, int y){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseExited(int x, int y){
+
 }
 
 //--------------------------------------------------------------

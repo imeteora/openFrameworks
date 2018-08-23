@@ -1,11 +1,22 @@
 
+
 #include "ofxAndroidUtils.h"
 
+#ifndef __clang__
 // fix for undefined symbols from ndk r8c
 extern "C" {
   extern void *__dso_handle __attribute__((__visibility__ ("hidden")));
   void *__dso_handle;
 }
+
+extern int atexit (void (*func)(void)) noexcept;
+int atexit (void (*func)(void)){
+	return 0;
+}
+#endif
+#include "ofLog.h"
+
+using namespace std;
 
 bool ofxAndroidIsOnline(){
 	jclass javaClass = ofGetJavaOFAndroid();
@@ -147,6 +158,98 @@ void ofxAndroidDismissProgressBox(int id){
 		return;
 	}
 	ofGetJNIEnv()->CallStaticVoidMethod(javaClass,dismissProgressBox,id);
+}
+
+string ofxAndroidGetPermissioString(ofxAndroidPermission permission){
+    switch(permission){
+        case OFX_ANDROID_PERMISSION_READ_CALENDAR:
+            return "android.permission.READ_CALENDAR";
+        case OFX_ANDROID_PERMISSION_WRITE_CALENDAR:
+            return "android.permission.WRITE_CALENDAR";
+        case OFX_ANDROID_PERMISSION_CAMERA:
+            return "android.permission.CAMERA";
+        case OFX_ANDROID_PERMISSION_READ_CONTACTS:
+            return "android.permission.READ_CONTACTS";
+        case OFX_ANDROID_PERMISSION_WRITE_CONTACTS:
+            return "android.permission.WRITE_CONTACTS";
+        case OFX_ANDROID_PERMISSION_GET_ACCOUNTS:
+            return "android.permission.GET_ACCOUNTS";
+        case OFX_ANDROID_PERMISSION_ACCESS_FINE_LOCATION:
+            return "android.permission.ACCESS_FINE_LOCATION";
+        case OFX_ANDROID_PERMISSION_ACCESS_COARSE_LOCATION:
+            return "android.permission.ACCESS_COARSE_LOCATION";
+        case OFX_ANDROID_PERMISSION_RECORD_AUDIO:
+            return "android.permission.RECORD_AUDIO";
+        case OFX_ANDROID_PERMISSION_READ_PHONE_STATE:
+            return "android.permission.READ_PHONE_STATE";
+        case OFX_ANDROID_PERMISSION_CALL_PHONE:
+            return "android.permission.CALL_PHONE";
+        case OFX_ANDROID_PERMISSION_READ_CALL_LOG:
+            return "android.permission.READ_CALL_LOG";
+        case OFX_ANDROID_PERMISSION_WRITE_CALL_LOG:
+            return "android.permission.WRITE_CALL_LOG";
+        case OFX_ANDROID_PERMISSION_ADD_VOICEMAIL:
+            return "android.permission.ADD_VOICEMAIL";
+        case OFX_ANDROID_PERMISSION_USE_SIP:
+            return "android.permission.USE_SIP";
+        case OFX_ANDROID_PERMISSION_PROCESS_OUTGOING_CALLS:
+            return "android.permission.PROCESS_OUTGOING_CALLS";
+        case OFX_ANDROID_PERMISSION_BODY_SENSORS:
+            return "android.permission.BODY_SENSORS";
+        case OFX_ANDROID_PERMISSION_SEND_SMS:
+            return "android.permission.SEND_SMS";
+        case OFX_ANDROID_PERMISSION_RECEIVE_SMS:
+            return "android.permission.RECEIVE_SMS";
+        case OFX_ANDROID_PERMISSION_READ_SMS:
+            return "android.permission.READ_SMS";
+        case OFX_ANDROID_PERMISSION_RECEIVE_WAP_PUSH:
+            return "android.permission.RECEIVE_WAP_PUSH";
+        case OFX_ANDROID_PERMISSION_RECEIVE_MMS:
+            return "android.permission.RECEIVE_MMS";
+        case OFX_ANDROID_PERMISSION_READ_EXTERNAL_STORAGE:
+            return "android.permission.READ_EXTERNAL_STORAGE";
+        case OFX_ANDROID_PERMISSION_WRITE_EXTERNAL_STORAGE:
+            return "android.permission.WRITE_EXTERNAL_STORAGE";
+    }
+}
+
+void ofxAndroidRequestPermission(ofxAndroidPermission permission){
+	jclass javaClass = ofGetJavaOFAndroid();
+
+	if(javaClass==0){
+		ofLogError("ofxAndroidUtils") << "ofxAndroidRequestPermission(): couldn't find OFAndroid java class";
+		return;
+	}
+
+	jmethodID requestPermission = ofGetJNIEnv()->GetStaticMethodID(javaClass,"requestPermission","(Ljava/lang/String;)V");
+	if(!requestPermission){
+		ofLogError("ofxAndroidUtils") << "ofxAndroidRequestPermission(): couldn't find OFAndroid requestPermission method";
+		return;
+	}
+    string stringPermission = ofxAndroidGetPermissioString(permission);
+	jstring jMsg = ofGetJNIEnv()->NewStringUTF(stringPermission.c_str());
+
+	ofGetJNIEnv()->CallStaticVoidMethod(javaClass,requestPermission,jMsg);
+}
+
+
+bool ofxAndroidCheckPermission(ofxAndroidPermission permission){
+	jclass javaClass = ofGetJavaOFAndroid();
+
+	if(javaClass==0){
+		ofLogError("ofxAndroidUtils") << "ofxAndroidCheckPermission(): couldn't find OFAndroid java class";
+		return false;
+	}
+
+	jmethodID checkPermission = ofGetJNIEnv()->GetStaticMethodID(javaClass,"checkPermission","(Ljava/lang/String;)Z");
+	if(!checkPermission){
+		ofLogError("ofxAndroidUtils") << "ofxAndroidCheckPermission(): couldn't find OFAndroid requestPermission method";
+		return false;
+	}
+	string stringPermission = ofxAndroidGetPermissioString(permission);
+	jstring jMsg = ofGetJNIEnv()->NewStringUTF(stringPermission.c_str());
+
+    return ofGetJNIEnv()->CallStaticBooleanMethod(javaClass,checkPermission,jMsg);
 }
 
 
@@ -338,6 +441,22 @@ void ofxAndroidDisableMulticast(){
 	ofGetJNIEnv()->CallStaticVoidMethod(javaClass,method);
 }
 
+void ofxAndroidSetViewItemChecked(string item_name, bool checked){
+	jclass javaClass = ofGetJavaOFAndroid();
+
+	if(javaClass==0){
+		ofLog(OF_LOG_ERROR,"ofxAndroidSetViewItemChecked: cannot find OFAndroid java class");
+		return;
+	}
+
+	jmethodID setViewItemChecked = ofGetJNIEnv()->GetStaticMethodID(javaClass,"setViewItemChecked","(Ljava/lang/String;Z)V");
+	if(!setViewItemChecked){
+		ofLog(OF_LOG_ERROR,"cannot find OFAndroid setViewItemChecked method");
+		return;
+	}
+	ofGetJNIEnv()->CallStaticVoidMethod(javaClass,setViewItemChecked,ofGetJNIEnv()->NewStringUTF(item_name.c_str()),checked);
+}
+
 string ofxAndroidRandomUUID(){
 	jclass javaClass = ofGetJavaOFAndroid();
 
@@ -422,4 +541,503 @@ void ofxAndroidNotifyLoadPercent(float percent){
 ofxAndroidEventsClass & ofxAndroidEvents(){
 	static ofxAndroidEventsClass * events = new ofxAndroidEventsClass;
 	return *events;
+}
+
+jmethodID ofxJavaGetMethodID(jclass classID, std::string methodName, std::string methodSignature) {
+
+	jmethodID result = ofGetJNIEnv()->GetMethodID(classID, methodName.c_str(), methodSignature.c_str());
+
+	if(!result){
+
+		ofLogError("ofxJavaGetMethodID") << "couldn't find instance method '"
+		<< methodName << "' with signature '"
+		<< methodSignature << "' in class '"
+		<< ofxJavaGetClassName(classID) << "'";
+		return NULL;
+	}
+
+	return result;
+}
+
+jmethodID ofxJavaGetStaticMethodID(jclass classID, std::string methodName, std::string methodSignature) {
+
+	jmethodID result = ofGetJNIEnv()->GetStaticMethodID(classID, methodName.c_str(), methodSignature.c_str());
+
+	if(!result){
+
+		ofLogError("ofxJavaGetStaticMethodID") << "couldn't find static method '"
+		<< methodName << "' with signature '"
+		<< methodSignature << "' in class '"
+		<< ofxJavaGetClassName(classID) << "'";
+		return NULL;
+	}
+
+	return result;
+}
+
+std::string ofxJavaGetClassName(jclass classID)
+{
+	return "[UNKNOWN]"; //TODO
+}
+
+jclass ofxJavaGetClassID(std::string className)
+{
+	jclass result = ofGetJNIEnv()->FindClass(className.c_str());
+
+	if(!result){
+
+		ofLogError("ofxJavaGetClassID") << "couldn't find class '"
+        << className << "'";
+		return NULL;
+	}
+
+	return result;
+}
+
+jfieldID ofxJavaGetStaticFieldID(jclass classID, std::string fieldName, std::string fieldType) {
+	jfieldID result = ofGetJNIEnv()->GetStaticFieldID(classID, fieldName.c_str(), fieldType.c_str());
+
+	if(!result){
+
+		ofLogError("ofxJavaGetStaticFieldID") << "couldn't find static field '" <<
+        fieldName << "' of type '" <<
+        fieldType << "' in class '" <<
+        ofxJavaGetClassName(classID) << "'";
+		return NULL;
+	}
+
+	return result;
+}
+
+jobject ofxJavaGetStaticObjectField(jclass classID, std::string fieldName, std::string fieldType) {
+
+	jfieldID fieldID = ofxJavaGetStaticFieldID(classID, fieldName, fieldType);
+
+	if (!fieldID)
+		return NULL;
+
+	return ofGetJNIEnv()->GetStaticObjectField(classID, fieldID);
+}
+
+jobject ofxJavaGetStaticObjectField(std::string className, std::string fieldName, std::string fieldType) {
+
+	jclass classID = ofxJavaGetClassID(className);
+
+	if (!classID)
+		return NULL;
+
+	jobject result = ofxJavaGetStaticObjectField(classID, fieldName, fieldType);
+
+	ofGetJNIEnv()->DeleteLocalRef(classID);
+
+	return result;
+}
+
+void ofxJavaCallVoidMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, va_list args){
+	jmethodID methodID = ofxJavaGetMethodID(classID, methodName, methodSignature);
+
+	if (!methodID)
+		return;
+
+	ofGetJNIEnv()->CallVoidMethodV(object, methodID, args);
+}
+
+void ofxJavaCallVoidMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, ...) {
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	ofxJavaCallVoidMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+}
+
+void ofxJavaCallVoidMethod(jobject object, std::string className, std::string methodName, std::string methodSignature, ...)
+{
+	jclass classID = ofxJavaGetClassID(className);
+
+	if (!classID)
+		return;
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	ofxJavaCallVoidMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	ofGetJNIEnv()->DeleteLocalRef(classID);
+}
+
+jobject ofxJavaCallStaticObjectMethod(jclass classID, std::string methodName, std::string methodSignature, va_list args)
+{
+	jmethodID methodID = ofxJavaGetStaticMethodID(classID, methodName, methodSignature);
+
+	if (!methodID)
+		return NULL;
+
+	return ofGetJNIEnv()->CallStaticObjectMethodV(classID, methodID, args);
+}
+
+jobject ofxJavaCallStaticObjectMethod(jclass classID, std::string methodName, std::string methodSignature, ...)
+{
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	jobject result = ofxJavaCallStaticObjectMethod(classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	return result;
+}
+
+jobject ofxJavaCallStaticObjectMethod(std::string className, std::string methodName, std::string methodSignature, ...)
+{
+	jclass classID = ofxJavaGetClassID(className);
+
+	if (!classID)
+		return NULL;
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	jobject result = ofxJavaCallStaticObjectMethod(classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	ofGetJNIEnv()->DeleteLocalRef(classID);
+
+	return result;
+}
+
+jobject ofxJavaCallObjectMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, va_list args)
+{
+	jmethodID methodID = ofxJavaGetMethodID(classID, methodName, methodSignature);
+
+	if (!methodID)
+		return NULL;
+
+	return ofGetJNIEnv()->CallObjectMethodV(object, methodID, args);
+}
+
+jobject ofxJavaCallObjectMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, ...)
+{
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	jobject result = ofxJavaCallObjectMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	return result;
+}
+
+jobject ofxJavaCallObjectMethod(jobject object, std::string className, std::string methodName, std::string methodSignature, ...)
+{
+	jclass classID = ofxJavaGetClassID(className);
+
+	if (!classID)
+		return NULL;
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	jobject result = ofxJavaCallObjectMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	ofGetJNIEnv()->DeleteLocalRef(classID);
+
+	return result;
+}
+
+
+void ofxJavaCallStaticVoidMethod(jclass classID, std::string methodName, std::string methodSignature, va_list args)
+{
+	jmethodID methodID = ofxJavaGetStaticMethodID(classID, methodName, methodSignature);
+
+	if (!methodID)
+		return;
+
+	ofGetJNIEnv()->CallStaticVoidMethodV(classID, methodID, args);
+}
+
+void ofxJavaCallStaticVoidMethod(jclass classID, std::string methodName, std::string methodSignature, ...)
+{
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	ofxJavaCallStaticVoidMethod(classID, methodName, methodSignature, args);
+
+	va_end(args);
+}
+
+void ofxJavaCallStaticVoidMethod(std::string className, std::string methodName, std::string methodSignature, ...)
+{
+	jclass classID = ofxJavaGetClassID(className);
+
+	if (!classID)
+		return;
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	ofxJavaCallStaticVoidMethod(classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	ofGetJNIEnv()->DeleteLocalRef(classID);
+}
+
+float ofxJavaCallFloatMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, va_list args){
+	jmethodID methodID = ofxJavaGetMethodID(classID, methodName, methodSignature);
+
+	if (!methodID){
+		ofLogError() << "Couldn't find " << methodName << " for float call";
+		return 0;
+	}
+
+	return ofGetJNIEnv()->CallFloatMethodV(object, methodID, args);
+}
+
+float ofxJavaCallFloatMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, ...){
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	auto result = ofxJavaCallFloatMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	return result;
+}
+
+float ofxJavaCallFloatMethod(jobject object, std::string className, std::string methodName, std::string methodSignature, ...){
+	jclass classID = ofxJavaGetClassID(className);
+
+	if (!classID){
+		ofLogError() << "Couldn't find " << className << " for float call";
+		return 0;
+	}
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	auto result = ofxJavaCallFloatMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	ofGetJNIEnv()->DeleteLocalRef(classID);
+
+	return result;
+}
+
+int ofxJavaCallIntMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, va_list args){
+	jmethodID methodID = ofxJavaGetMethodID(classID, methodName, methodSignature);
+
+	if (!methodID){
+		ofLogError() << "Couldn't find " << methodName << " for int call";
+		return 0;
+	}
+
+	return ofGetJNIEnv()->CallIntMethodV(object, methodID, args);
+}
+
+int ofxJavaCallIntMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, ...){
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	auto result = ofxJavaCallIntMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	return result;
+
+}
+
+int ofxJavaCallIntMethod(jobject object, std::string className, std::string methodName, std::string methodSignature, ...){
+	jclass classID = ofxJavaGetClassID(className);
+
+	if (!classID){
+		ofLogError() << "Couldn't find " << className << " for int call";
+		return 0;
+	}
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	auto result = ofxJavaCallIntMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	ofGetJNIEnv()->DeleteLocalRef(classID);
+
+	return result;
+}
+
+int64_t ofxJavaCallLongMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, va_list args){
+	jmethodID methodID = ofxJavaGetMethodID(classID, methodName, methodSignature);
+
+	if (!methodID){
+		ofLogError() << "Couldn't find " << methodName << " for int64_t call";
+		return 0;
+	}
+
+	return ofGetJNIEnv()->CallLongMethodV(object, methodID, args);
+}
+
+int64_t ofxJavaCallLongMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, ...){
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	auto result = ofxJavaCallLongMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	return result;
+
+}
+
+int64_t ofxJavaCallLongMethod(jobject object, std::string className, std::string methodName, std::string methodSignature, ...){
+	jclass classID = ofxJavaGetClassID(className);
+
+	if (!classID){
+		ofLogError() << "Couldn't find " << className << " for int64_t call";
+		return 0;
+	}
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	auto result = ofxJavaCallLongMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	ofGetJNIEnv()->DeleteLocalRef(classID);
+
+	return result;
+}
+
+bool ofxJavaCallBoolMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, va_list args){
+	jmethodID methodID = ofxJavaGetMethodID(classID, methodName, methodSignature);
+
+	if (!methodID){
+		ofLogError() << "Couldn't find " << methodName << " for bool call";
+		return false;
+	}
+
+	return ofGetJNIEnv()->CallBooleanMethodV(object, methodID, args);
+}
+
+bool ofxJavaCallBoolMethod(jobject object, jclass classID, std::string methodName, std::string methodSignature, ...){
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	auto result = ofxJavaCallBoolMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	return result;
+
+}
+
+bool ofxJavaCallBoolMethod(jobject object, std::string className, std::string methodName, std::string methodSignature, ...){
+	jclass classID = ofxJavaGetClassID(className);
+
+	if (!classID){
+		ofLogError() << "Couldn't find " << className << " for bool call";
+		return false;
+	}
+
+	va_list args;
+
+	va_start(args, methodSignature);
+
+	auto result = ofxJavaCallBoolMethod(object, classID, methodName, methodSignature, args);
+
+	va_end(args);
+
+	ofGetJNIEnv()->DeleteLocalRef(classID);
+
+	return result;
+}
+
+void ofxJavaGetJString(const std::string& str, jstring &jstr)
+{
+	jstr = ofGetJNIEnv()->NewStringUTF(str.c_str());
+}
+
+void ofxJstringToString(JNIEnv * env, jstring jstr, std::string &str)
+{
+    jboolean isCopy;
+    const char *arrayChar = env->GetStringUTFChars(jstr, &isCopy);
+    if(isCopy == JNI_FALSE)
+        return;
+    str = arrayChar;
+}
+
+ofxAndroidScaleEventArgs::ofxAndroidScaleEventArgs(jobject detector){
+	this->detector = detector;
+}
+
+float ofxAndroidScaleEventArgs::getCurrentSpan(){
+	return ofxJavaCallFloatMethod(detector,"android/view/ScaleGestureDetector","getCurrentSpan","()F");
+}
+
+float ofxAndroidScaleEventArgs::getCurrentSpanX(){
+	return ofxJavaCallFloatMethod(detector,"android/view/ScaleGestureDetector","getCurrentSpanX","()F");
+}
+
+float ofxAndroidScaleEventArgs::getCurrentSpanY(){
+	return ofxJavaCallFloatMethod(detector,"android/view/ScaleGestureDetector","getCurrentSpanY","()F");
+}
+
+int64_t ofxAndroidScaleEventArgs::getEventTime(){
+	return ofxJavaCallLongMethod(detector,"android/view/ScaleGestureDetector","getEventTime","()L");
+}
+
+float ofxAndroidScaleEventArgs::getFocusX(){
+	return ofxJavaCallFloatMethod(detector,"android/view/ScaleGestureDetector","getFocusX","()F");
+}
+
+float ofxAndroidScaleEventArgs::getFocusY(){
+	return ofxJavaCallFloatMethod(detector,"android/view/ScaleGestureDetector","getFocusY","()F");
+}
+
+float ofxAndroidScaleEventArgs::getPreviousSpan(){
+	return ofxJavaCallFloatMethod(detector,"android/view/ScaleGestureDetector","getPreviousSpan","()F");
+}
+
+float ofxAndroidScaleEventArgs::getPreviousSpanX(){
+	return ofxJavaCallFloatMethod(detector,"android/view/ScaleGestureDetector","getPreviousSpanX","()F");
+}
+
+float ofxAndroidScaleEventArgs::getPreviousSpanY(){
+	return ofxJavaCallFloatMethod(detector,"android/view/ScaleGestureDetector","getPreviousSpanY","()F");
+}
+
+float ofxAndroidScaleEventArgs::getScaleFactor(){
+	return ofxJavaCallFloatMethod(detector,"android/view/ScaleGestureDetector","getScaleFactor","()F");
+}
+
+int64_t ofxAndroidScaleEventArgs::getTimeDelta(){
+	return ofxJavaCallLongMethod(detector,"android/view/ScaleGestureDetector","getTimeDelta","()L");
 }

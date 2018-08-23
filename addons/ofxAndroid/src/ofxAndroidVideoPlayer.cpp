@@ -8,30 +8,9 @@
 #include "ofxAndroidVideoPlayer.h"
 #include "ofxAndroidUtils.h"
 #include "ofLog.h"
-#include <set>
+#include "ofMatrix4x4.h"
 
-//---------------------------------------------------------------------------
-static set<ofxAndroidVideoPlayer*> & all_videoplayers(){
-	static set<ofxAndroidVideoPlayer*> *all_videoplayers = new set<ofxAndroidVideoPlayer*>;
-	return *all_videoplayers;
-}
-
-void ofPauseVideoPlayers(){
-	ofLogVerbose("ofxAndroidVideoPlayer") << "ofPauseVideoPlayers(): releasing textures";
-	set<ofxAndroidVideoPlayer*>::iterator it;
-	for(it=all_videoplayers().begin();it!=all_videoplayers().end();it++){
-		(*it)->unloadTexture();
-	}
-}
-
-void ofResumeVideoPlayers(){
-	ofLogVerbose("ofxAndroidVideoPlayer") << "ofResumeVideoPlayers(): trying to allocate textures";
-	set<ofxAndroidVideoPlayer*>::iterator it;
-	for(it=all_videoplayers().begin();it!=all_videoplayers().end();it++){
-		(*it)->reloadTexture();
-	}
-	ofLogVerbose("ofxAndroidVideoPlayer") << "ofResumeVideoPlayers(): textures allocated";
-}
+using namespace std;
 
 //---------------------------------------------------------------------------
 void ofxAndroidVideoPlayer::reloadTexture(){
@@ -69,17 +48,9 @@ void ofxAndroidVideoPlayer::unloadTexture(){
 	texture.texData.textureID=0;
 }
 
-//---------------------------------------------------------------------------
-void ofxAndroidVideoPlayer::removeTexture(){
-	texture.texData.textureID=0;
-	texture.texData.bAllocated = false;
-}
-
 
 //---------------------------------------------------------------------------
 ofxAndroidVideoPlayer::ofxAndroidVideoPlayer(){
-
-	all_videoplayers().insert(this);
 
 	JNIEnv *env = ofGetJNIEnv();
 	if (!env) {
@@ -113,13 +84,13 @@ ofxAndroidVideoPlayer::ofxAndroidVideoPlayer(){
 	jfloatArray localMatrixJava = env->NewFloatArray(16);
 	matrixJava = (jfloatArray) env->NewGlobalRef(localMatrixJava);
 
+	ofAddListener(ofxAndroidEvents().unloadGL,this,&ofxAndroidVideoPlayer::unloadTexture);
+	ofAddListener(ofxAndroidEvents().reloadGL,this,&ofxAndroidVideoPlayer::reloadTexture);
+
 }
 
 //---------------------------------------------------------------------------
 ofxAndroidVideoPlayer::~ofxAndroidVideoPlayer(){
-
-	all_videoplayers().erase(this);
-
 	JNIEnv *env = ofGetJNIEnv();
 	if(javaVideoPlayer) env->DeleteGlobalRef(javaVideoPlayer);
 	if(javaClass) env->DeleteGlobalRef(javaClass);
@@ -168,7 +139,7 @@ bool ofxAndroidVideoPlayer::load(string fileName){
 	td.tex_t = 1; // Hack!
 	td.tex_u = 1;
 	td.textureTarget = GL_TEXTURE_EXTERNAL_OES;
-	td.glTypeInternal = GL_RGBA;
+	td.glInternalFormat = GL_RGBA;
 	td.bFlipTexture = false;
 
 	// hack to initialize gl resources from outside ofTexture
@@ -184,7 +155,24 @@ bool ofxAndroidVideoPlayer::load(string fileName){
 
 //---------------------------------------------------------------------------
 void ofxAndroidVideoPlayer::close(){
+	if(!javaVideoPlayer){
+		ofLogError("ofxAndroidVideoPlayer") << "unloadMovie(): java VideoPlayer not loaded";
+		return;
+	}
+	JNIEnv *env = ofGetJNIEnv();
+	if (!env) {
+		ofLogError("ofxAndroidVideoPlayer") << "unloadMovie(): couldn't get environment using GetEnv()";
+		return;
+	}
 
+	jmethodID javaUnloadMethod = env->GetMethodID(javaClass,"unloadMovie","()V");
+	if(!javaUnloadMethod){
+		ofLogError("ofxAndroidVideoPlayer") << "unloadMovie(): couldn't get java unloadMovie for VideoPlayer";
+		return;
+	}
+
+	unloadTexture();
+	env->CallVoidMethod(javaVideoPlayer,javaUnloadMethod);
 }
 
 //---------------------------------------------------------------------------

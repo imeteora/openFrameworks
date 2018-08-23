@@ -24,6 +24,7 @@ public class OFAndroidVideoPlayer extends OFAndroidObject implements OnFrameAvai
 		bIsFrameNew = false;
 		bAutoResume = false;
 		bIsMoviedone = false;
+		bIsLooping = false;
 		
 		// TODO Get movie FPS to implement Frame methods
 		// movieFPS = 16;
@@ -74,6 +75,8 @@ public class OFAndroidVideoPlayer extends OFAndroidObject implements OnFrameAvai
 		try {
 			if(mediaPlayer == null) {
 				mediaPlayer = new MediaPlayer();
+				mediaPlayer.reset();
+				mediaPlayer.setLooping(bIsLooping);
 				mediaPlayer.setOnPreparedListener(new OnPreparedListener() {
 					public void onPrepared(MediaPlayer mp) {
 						bIsLoaded = true;
@@ -100,6 +103,7 @@ public class OFAndroidVideoPlayer extends OFAndroidObject implements OnFrameAvai
 			}
 			mediaPlayer.setDataSource(fileName);
 			mediaPlayer.prepare();
+			bIsLoaded = true;
 			//setVolume(volume);
 			this.fileName = fileName;
 		} catch (Exception e) {
@@ -132,6 +136,7 @@ public class OFAndroidVideoPlayer extends OFAndroidObject implements OnFrameAvai
 	void unloadMovie(){
 		if(mediaPlayer!=null){
 			mediaPlayer.setSurface(null);
+			mediaPlayer.reset();
 			mediaPlayer.release();
 			mediaPlayer = null;
 		}
@@ -153,8 +158,8 @@ public class OFAndroidVideoPlayer extends OFAndroidObject implements OnFrameAvai
 		// see: Curtis Roads: Computer Music Tutorial p 460
 		// thanks to jasch
 		float angle = pan * 0.7853981633974483f; // in radians from -45. to +45.
-		float cosAngle = FloatMath.cos(angle);
-		float sinAngle = FloatMath.sin(angle);
+		float cosAngle = (float) Math.cos(angle);
+		float sinAngle = (float) Math.sin(angle);
 		leftVolume  = (float)((cosAngle - sinAngle) * 0.7071067811865475) * vol; // multiplied by sqrt(2)/2
 		rightVolume = (float)((cosAngle + sinAngle) * 0.7071067811865475) * vol; // multiplied by sqrt(2)/2
 		if(mediaPlayer!=null)mediaPlayer.setVolume(leftVolume, rightVolume);
@@ -184,6 +189,7 @@ public class OFAndroidVideoPlayer extends OFAndroidObject implements OnFrameAvai
 	void setLoopState(boolean bL){
 		if(mediaPlayer==null) return;
 		mediaPlayer.setLooping(bL);
+		bIsLooping = bL;
 	}
 	
 	boolean getLoopState(){
@@ -326,6 +332,7 @@ public class OFAndroidVideoPlayer extends OFAndroidObject implements OnFrameAvai
 	private boolean bIsPaused;
 	private boolean bIsMoviedone;
 	private boolean bIsFrameNew;
+	private boolean bIsLooping;
 	
 	//private int movieFPS;
 	//private int nFrames;

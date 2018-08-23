@@ -10,9 +10,9 @@
 #include "ofEvents.h"
 #include "ofGLProgrammableRenderer.h"
 
-ofxAppEmscriptenWindow * ofxAppEmscriptenWindow::instance = NULL;
+using namespace std;
 
-void ofGLReadyCallback();
+ofxAppEmscriptenWindow * ofxAppEmscriptenWindow::instance = NULL;
 
 // from http://cantuna.googlecode.com/svn-history/r16/trunk/src/screen.cpp
 #define CASE_STR(x,y) case x: str = y; break
@@ -53,8 +53,7 @@ ofxAppEmscriptenWindow::~ofxAppEmscriptenWindow() {
 	// TODO Auto-generated destructor stub
 }
 
-
-void ofxAppEmscriptenWindow::setupOpenGL(int w, int h, ofWindowMode screenMode){
+void ofxAppEmscriptenWindow::setup(const ofGLESWindowSettings & settings){
 	EGLint numConfigs;
 	EGLint majorVersion;
 	EGLint minorVersion;
@@ -62,11 +61,11 @@ void ofxAppEmscriptenWindow::setupOpenGL(int w, int h, ofWindowMode screenMode){
 	EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE };
 	EGLint attribList[] =
 	   {
-		   EGL_RED_SIZE, 8,
-		   EGL_GREEN_SIZE, 8,
-		   EGL_BLUE_SIZE, 8,
-		   EGL_ALPHA_SIZE, 8,
-		   EGL_DEPTH_SIZE, 8,
+		   EGL_RED_SIZE, EGL_DONT_CARE,
+		   EGL_GREEN_SIZE, EGL_DONT_CARE,
+		   EGL_BLUE_SIZE, EGL_DONT_CARE,
+		   EGL_ALPHA_SIZE, EGL_DONT_CARE,
+		   EGL_DEPTH_SIZE, EGL_DONT_CARE,
 		   EGL_STENCIL_SIZE, EGL_DONT_CARE,
 		   EGL_SAMPLE_BUFFERS, EGL_DONT_CARE,
 		   EGL_NONE
@@ -91,6 +90,8 @@ void ofxAppEmscriptenWindow::setupOpenGL(int w, int h, ofWindowMode screenMode){
 		return;
 	}
 
+	ofLogNotice("ofxAppEmscriptenWindow") << "Got " << numConfigs << " display configs";
+
 	// Choose config
 	if ( !eglChooseConfig(display, attribList, &config, 1, &numConfigs) ){
 		ofLogError() << "couldn't choose display";
@@ -106,9 +107,9 @@ void ofxAppEmscriptenWindow::setupOpenGL(int w, int h, ofWindowMode screenMode){
 
 	// Create a GL context
 	context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttribs );
-	if ( context == EGL_NO_CONTEXT )
-	{
-	  return;
+	if ( context == EGL_NO_CONTEXT ){
+		ofLogError() << "couldn't create context";
+	    return;
 	}
 
 	// Make the context current
@@ -117,22 +118,26 @@ void ofxAppEmscriptenWindow::setupOpenGL(int w, int h, ofWindowMode screenMode){
 		return;
 	}
 
-	setWindowShape(w,h);
+	setWindowShape(settings.getWidth(),settings.getHeight());
 
-	ofGLReadyCallback();
-}
+	_renderer = make_shared<ofGLProgrammableRenderer>(this);
+	((ofGLProgrammableRenderer*)_renderer.get())->setup(2,0);
 
-void ofxAppEmscriptenWindow::initializeWindow(){
     emscripten_set_keydown_callback(0,this,1,&keydown_cb);
     emscripten_set_keyup_callback(0,this,1,&keyup_cb);
     emscripten_set_mousedown_callback(0,this,1,&mousedown_cb);
     emscripten_set_mouseup_callback(0,this,1,&mouseup_cb);
     emscripten_set_mousemove_callback(0,this,1,&mousemoved_cb);
+
+    emscripten_set_touchstart_callback(0,this,1,&touch_cb);
+    emscripten_set_touchend_callback(0,this,1,&touch_cb);
+    emscripten_set_touchmove_callback(0,this,1,&touch_cb);
+    emscripten_set_touchcancel_callback(0,this,1,&touch_cb);
 }
 
-void ofxAppEmscriptenWindow::runAppViaInfiniteLoop(ofBaseApp * appPtr){
+void ofxAppEmscriptenWindow::loop(){
 
-	ofNotifySetup();
+	instance->events().notifySetup();
 
 
 	// Emulate loop via callbacks
@@ -140,38 +145,19 @@ void ofxAppEmscriptenWindow::runAppViaInfiniteLoop(ofBaseApp * appPtr){
 }
 
 void ofxAppEmscriptenWindow::update(){
-	ofNotifyUpdate();
+	events().notifyUpdate();
 }
 
 void ofxAppEmscriptenWindow::draw(){
 	///////////////////////////////////////////////////////////////////////////////////////
 	// set viewport, clear the screen
-	ofPtr<ofGLProgrammableRenderer> renderer = ofGetGLProgrammableRenderer();
-	if( renderer ){
-		renderer->startRender();
-	}
+	renderer()->startRender();
+	if( bEnableSetupScreen ) renderer()->setupScreen();
 
-	int width;
-	int height;
-	int isFullscreen;
-	emscripten_get_canvas_size( &width, &height, &isFullscreen );
+	events().notifyDraw();
 
-	ofViewport( 0, 0, width, height, false );    // used to be glViewport( 0, 0, width, height );
+	renderer()->finishRender();
 
-	float * bgPtr = ofBgColorPtr();
-	bool bClearAuto = ofbClearBg();
-
-	if( bClearAuto || ofGetFrameNum() < 3 ){
-		ofClear(bgPtr[0]*255,bgPtr[1]*255,bgPtr[2]*255, bgPtr[3]*255);
-	}
-
-	if( bEnableSetupScreen ) ofSetupScreen(); // this calls into the current renderer (ofSetupScreenPerspective)
-
-	ofNotifyDraw();
-
-	if( renderer ){
-		renderer->finishRender();
-	}
 
 	EGLBoolean success = eglSwapBuffers( display, surface );
 	if( !success ) {
@@ -192,7 +178,7 @@ int ofxAppEmscriptenWindow::keydown_cb(int eventType, const EmscriptenKeyboardEv
 	if(key==0){
 		key = keyEvent->which + 32;
 	}
-	ofNotifyKeyPressed(key);
+	instance->events().notifyKeyPressed(key);
 	return 0;
 }
 
@@ -201,29 +187,60 @@ int ofxAppEmscriptenWindow::keyup_cb(int eventType, const EmscriptenKeyboardEven
 	if(key==0){
 		key = keyEvent->which + 32;
 	}
-	ofNotifyKeyReleased(key);
+	instance->events().notifyKeyReleased(key);
 	return 0;
 }
 
 int ofxAppEmscriptenWindow::mousedown_cb(int eventType, const EmscriptenMouseEvent *mouseEvent, void *userData){
-	ofNotifyMousePressed(ofGetMouseX(),ofGetMouseY(),mouseEvent->button);
+	instance->events().notifyMousePressed(ofGetMouseX(),ofGetMouseY(),mouseEvent->button);
 	return 0;
 }
 
 int ofxAppEmscriptenWindow::mouseup_cb(int eventType, const EmscriptenMouseEvent *mouseEvent, void *userData){
-	ofNotifyMouseReleased(ofGetMouseX(),ofGetMouseY(),mouseEvent->button);
+	instance->events().notifyMouseReleased(ofGetMouseX(),ofGetMouseY(),mouseEvent->button);
 	return 0;
 
 }
 
 int ofxAppEmscriptenWindow::mousemoved_cb(int eventType, const EmscriptenMouseEvent *mouseEvent, void *userData){
 	if(ofGetMousePressed()){
-		ofNotifyMouseDragged(mouseEvent->canvasX,mouseEvent->canvasY,0);
+		instance->events().notifyMouseDragged(mouseEvent->canvasX,mouseEvent->canvasY,0);
 	}else{
-		ofNotifyMouseMoved(mouseEvent->canvasX,mouseEvent->canvasY);
+		instance->events().notifyMouseMoved(mouseEvent->canvasX,mouseEvent->canvasY);
 	}
 	return 0;
 
+}
+
+int ofxAppEmscriptenWindow::touch_cb(int eventType, const EmscriptenTouchEvent* e, void* userData) {
+
+        ofTouchEventArgs::Type touchArgsType;
+        switch (eventType) {
+                    case EMSCRIPTEN_EVENT_TOUCHSTART:
+                        touchArgsType = ofTouchEventArgs::down;
+                        break;
+                    case EMSCRIPTEN_EVENT_TOUCHEND:
+                        touchArgsType = ofTouchEventArgs::up;
+                        break;
+                    case EMSCRIPTEN_EVENT_TOUCHMOVE:
+                        touchArgsType = ofTouchEventArgs::move;
+                        break;
+                    case EMSCRIPTEN_EVENT_TOUCHCANCEL:
+                        touchArgsType = ofTouchEventArgs::cancel;
+                        break;
+                    default:
+                        return 1;
+            }
+        int numTouches = e->numTouches;
+        for (int i = 0; i < numTouches; i++) {
+                ofTouchEventArgs touchArgs;
+                touchArgs.type = touchArgsType;
+                touchArgs.id = i;
+                touchArgs.x =  e->touches[i].canvasX;
+                touchArgs.y =  e->touches[i].canvasY;
+                instance->events().notifyTouchEvent(touchArgs);
+           }
+    return 0;
 }
 
 void ofxAppEmscriptenWindow::hideCursor(){
@@ -245,20 +262,20 @@ void ofxAppEmscriptenWindow::setWindowShape(int w, int h){
 
 
 
-ofPoint	ofxAppEmscriptenWindow::getWindowPosition(){
-	return ofVec2f(0,0);
+glm::vec2 ofxAppEmscriptenWindow::getWindowPosition(){
+	return glm::vec2(0,0);
 }
 
 
-ofPoint	ofxAppEmscriptenWindow::getWindowSize(){
+glm::vec2 ofxAppEmscriptenWindow::getWindowSize(){
 	int width;
 	int height;
 	int isFullscreen;
 	emscripten_get_canvas_size( &width, &height, &isFullscreen );
-	return ofVec2f(width,height);
+	return glm::vec2(width,height);
 }
 
-ofPoint	ofxAppEmscriptenWindow::getScreenSize(){
+glm::vec2 ofxAppEmscriptenWindow::getScreenSize(){
 	return getWindowSize();
 }
 
@@ -335,4 +352,10 @@ EGLSurface ofxAppEmscriptenWindow::getEGLSurface(){
 	return surface;
 }
 
+ofCoreEvents & ofxAppEmscriptenWindow::events(){
+	return _events;
+}
 
+shared_ptr<ofBaseRenderer> & ofxAppEmscriptenWindow::renderer(){
+	return _renderer;
+}

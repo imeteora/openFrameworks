@@ -48,15 +48,15 @@ void ofApp::update(){
 	if (bNewFrame){
 	
 		#ifdef _USE_LIVE_VIDEO
-			if( vidGrabber.getPixels() != NULL ){
+			if( vidGrabber.getPixels().getData() != NULL ){
 		#else
-			if( vidPlayer.getPixels() != NULL && vidPlayer.getWidth() > 0 ){
+			if( vidPlayer.getPixels().getData() != NULL && vidPlayer.getWidth() > 0 ){
 		#endif
 
 			#ifdef _USE_LIVE_VIDEO
-				colorImg.setFromPixels(vidGrabber.getPixels(), capW, capH);
+				colorImg.setFromPixels(vidGrabber.getPixels().getData(), capW, capH);
 			#else
-				colorImg.setFromPixels(vidPlayer.getPixels(), capW, capH);
+				colorImg.setFromPixels(vidPlayer.getPixels().getData(), capW, capH);
 			#endif
 
 			grayImage = colorImg;
@@ -102,9 +102,10 @@ void ofApp::draw(){
 	// finally, a report:
 
 	ofSetHexColor(0xffffff);
-	char reportStr[1024];
-	sprintf(reportStr, "bg subtraction and blob detection\npress ' ' to capture bg\nthreshold %i\nnum blobs found %i, fps: %f", threshold, contourFinder.nBlobs, ofGetFrameRate());
-	ofDrawBitmapString(reportStr, 4, 380);
+	stringstream reportStr;
+    reportStr << "bg subtraction and blob detection\nptap to capture bg\n";
+    reportStr << "threshold "<< threshold << "\nnum blobs found " << contourFinder.nBlobs << " fps: " << ofGetFrameRate();
+	ofDrawBitmapString(reportStr.str(), 4, 380);
 }
     
 //--------------------------------------------------------------

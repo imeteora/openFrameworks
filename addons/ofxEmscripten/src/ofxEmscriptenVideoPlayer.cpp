@@ -8,6 +8,8 @@
 #include "ofxEmscriptenVideoPlayer.h"
 #include "html5video.h"
 
+using namespace std;
+
 enum ReadyState{
 	HAVE_NOTHING = 0,
 	HAVE_METADATA,
@@ -28,7 +30,7 @@ ofxEmscriptenVideoPlayer::~ofxEmscriptenVideoPlayer() {
 	html5video_player_delete(id);
 }
 
-bool ofxEmscriptenVideoPlayer::loadMovie(string name){
+bool ofxEmscriptenVideoPlayer::load(string name){
 	html5video_player_load(id,ofToDataPath(name).c_str());
 	return true;
 }
@@ -42,7 +44,7 @@ void ofxEmscriptenVideoPlayer::close(){
 
 void ofxEmscriptenVideoPlayer::update(){
 	gotFirstFrame = pixels.isAllocated();
-	if(html5video_player_update(id,pixels.isAllocated() && usePixels,pixels.getPixels())){
+	if(html5video_player_update(id,pixels.isAllocated() && usePixels,pixels.getData())){
 		if(texture.texData.width!=html5video_player_width(id) || texture.texData.height!=html5video_player_height(id)){
 			texture.texData.width = html5video_player_width(id);
 			texture.texData.height = html5video_player_height(id);
@@ -67,13 +69,13 @@ void ofxEmscriptenVideoPlayer::update(){
 			texture.texData.bFlipTexture = false;
 			switch(getPixelFormat()){
 			case OF_PIXELS_RGBA:
-				texture.texData.glTypeInternal = GL_RGBA;
+				texture.texData.glInternalFormat = GL_RGBA;
 				break;
 			case OF_PIXELS_RGB:
-				texture.texData.glTypeInternal = GL_RGB;
+				texture.texData.glInternalFormat = GL_RGB;
 				break;
 			case OF_PIXELS_MONO:
-				texture.texData.glTypeInternal = GL_LUMINANCE;
+				texture.texData.glInternalFormat = GL_LUMINANCE;
 				break;
 			default:
 				ofLogError() << "unknown pixel format, can't allocating texture";

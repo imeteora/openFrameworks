@@ -6,16 +6,17 @@
  */
 #pragma once
 #include "ofURLFileLoader.h"
-#include "ofBaseTypes.h"
 
 class ofxEmscriptenURLFileLoader: public ofBaseURLFileLoader {
 public:
 	ofxEmscriptenURLFileLoader();
 	virtual ~ofxEmscriptenURLFileLoader();
-	ofHttpResponse get(string url);
-	int getAsync(string url, string name=""); // returns id
-	ofHttpResponse saveTo(string url, string path);
-	int saveAsync(string url, string path);
+	ofHttpResponse get(const std::string &  url);
+	int getAsync(const std::string &  url, const std::string &  name=""); // returns id
+	ofHttpResponse saveTo(const std::string &  url, const std::filesystem::path &  path);
+	int saveAsync(const std::string &  url, const std::filesystem::path &  path);
+	ofHttpResponse handleRequest(const ofHttpRequest & request);
+	int handleRequestAsync(const ofHttpRequest & request);
 	void remove(int id);
 	void clear();
 	void stop();

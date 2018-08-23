@@ -13,7 +13,8 @@ public:
 	bool 	setPixelFormat(ofPixelFormat pixelFormat);
 	ofPixelFormat	getPixelFormat() const;
 	
-	bool 	load(string uri);
+	void	loadAsync(std::string name);
+	bool 	load(std::string uri);
 
 	void 	update();
 
@@ -50,6 +51,7 @@ public:
 
 	ofPixels&		getPixels();
 	const ofPixels& getPixels() const;
+	ofTexture * getTexturePtr();
 
 	float 			getHeight() const;
 	float 			getWidth() const;
@@ -58,13 +60,12 @@ public:
 	void setThreadAppSink(bool threaded);
 	bool isThreadedAppSink() const;
 	bool isFrameByFrame() const;
-	void setAsynchronousLoad(bool async);
 
 	ofGstVideoUtils * getGstVideoUtils();
 
 protected:
 	bool allocate();
-	bool createPipeline(string uri);
+	bool createPipeline(std::string uri);
 	void on_stream_prepared();
 
 	// return true to set the message as attended so upstream doesn't try to process it
@@ -72,7 +73,6 @@ protected:
 
 private:
 	ofPixelFormat		internalPixelFormat;
-	bool				nativePixels;
 	guint64				nFrames;
 	int 				fps_n, fps_d;
 	bool				bIsStream;

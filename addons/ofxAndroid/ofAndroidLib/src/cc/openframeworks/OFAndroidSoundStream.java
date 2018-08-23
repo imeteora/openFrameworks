@@ -46,7 +46,7 @@ public class OFAndroidSoundStream extends OFAndroidObject implements Runnable, O
 		return android.media.AudioRecord.getMinBufferSize(samplerate, inChannels, AudioFormat.ENCODING_PCM_16BIT)/2;
 	}
 	
-	private void setupOut(int nOutputChannels, int sampleRate, int bufferSize){
+	private void setupOut(int nOutputChannels, int sampleRate){
 		int outChannels = AudioFormat.CHANNEL_OUT_STEREO;
 		numOuts = 2;
 		if(nOutputChannels==1){
@@ -56,6 +56,7 @@ public class OFAndroidSoundStream extends OFAndroidObject implements Runnable, O
 		
 		int minBufferSize = android.media.AudioTrack.getMinBufferSize(sampleRate, outChannels, AudioFormat.ENCODING_PCM_16BIT)/2;
 		int outBufferSize = minBufferSize>requestedBufferSize?minBufferSize:requestedBufferSize;
+		int bufferSizeInBytes = outBufferSize*2;
 		
 		outBuffer = new short[outBufferSize*numOuts];
 
@@ -64,12 +65,12 @@ public class OFAndroidSoundStream extends OFAndroidObject implements Runnable, O
 		}
 		
 		oTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, outChannels, 
-								AudioFormat.ENCODING_PCM_16BIT, outBufferSize*2, AudioTrack.MODE_STREAM);
+								AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
 		
 		Log.i("OF","sound output setup with buffersize: " + minBufferSize);
 	}
 	
-	private void setupIn(int nInputChannels, int sampleRate, int bufferSize){
+	private void setupIn(int nInputChannels, int sampleRate){
 		int inChannels = AudioFormat.CHANNEL_IN_STEREO;
 		numIns = 2;
 		if(nInputChannels==1){
@@ -78,16 +79,13 @@ public class OFAndroidSoundStream extends OFAndroidObject implements Runnable, O
 		}
 		
 		int minBufferSize = android.media.AudioRecord.getMinBufferSize(sampleRate, inChannels, AudioFormat.ENCODING_PCM_16BIT)/2;
-		int inBufferSize = minBufferSize>requestedBufferSize?minBufferSize:requestedBufferSize;
+		int inBufferSize = requestedBufferSize;//minBufferSize>requestedBufferSize?minBufferSize:requestedBufferSize;
+		int bufferSizeInBytes = (minBufferSize>requestedBufferSize?minBufferSize:requestedBufferSize)*2;
 		
-		iTrack = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, inChannels, AudioFormat.ENCODING_PCM_16BIT, inBufferSize*2);
+		iTrack = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, inChannels, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
 		
 		
 		inBuffer = new short[inBufferSize*numIns];
-
-		/*for(int i=0;i<inBuffer.length;i++){
-			inBuffer[i]=0;
-		}*/ // http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5
 		
 		Log.i("OF","sound input setup with buffersize: " + minBufferSize);
 	}
@@ -101,11 +99,11 @@ public class OFAndroidSoundStream extends OFAndroidObject implements Runnable, O
 		this.requestedBuffers = nBuffers;
 		
 		if(nOutputChannels>0){
-			setupOut(nOutputChannels,sampleRate,bufferSize);
+			setupOut(nOutputChannels,sampleRate);
 		}
 		
 		if(nInputChannels>0){
-			setupIn(nInputChannels,sampleRate,bufferSize);
+			setupIn(nInputChannels,sampleRate);
 		}else{
 			Log.i("OF","no input channels");
 		}
@@ -194,9 +192,19 @@ public class OFAndroidSoundStream extends OFAndroidObject implements Runnable, O
 				onPeriodicNotification(oTrack);
 			}
 		}*/
-		
-		oTrack.play();
+		if(oTrack!=null){
+			oTrack.play();
+		}
 		started = true;
+	}
+	
+	public void stop(){
+		if(oTrack!=null){
+			oTrack.stop();
+		}
+		if(iTrack!=null){
+			iTrack.stop();
+		}
 	}
 	
 	private Integer sampleRate;

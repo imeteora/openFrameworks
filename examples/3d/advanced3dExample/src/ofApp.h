@@ -15,7 +15,6 @@
 // Custom objects for this example
 #include "Swarm.h"
 #include "Grid.h"
-#include "OrthoCamera.h"
 
 #define N_CAMERAS 4
 
@@ -36,13 +35,15 @@ class ofApp : public ofBaseApp {
 		void mouseDragged(int x, int y, int button);
 		void mousePressed(int x, int y, int button);
 		void mouseReleased(int x, int y, int button);
+		void mouseEntered(int x, int y);
+		void mouseExited(int x, int y);
 		void windowResized(int w, int h);
 
 		//cameras (all these inherit from ofCamera)
 		ofEasyCam camEasyCam;
-		orthoCamera camFront;
-		orthoCamera camTop;
-		orthoCamera camLeft;
+		ofCamera camFront;
+		ofCamera camTop;
+		ofCamera camLeft;
 
 		//cameras have parent?
 		bool bCamParent;

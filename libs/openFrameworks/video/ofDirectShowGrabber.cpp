@@ -105,9 +105,9 @@ ofPixelFormat ofDirectShowGrabber::getPixelFormat() const {
 }
 
 //--------------------------------------------------------------------
-vector<ofVideoDevice> ofDirectShowGrabber::listDevices() const {
+std::vector<ofVideoDevice> ofDirectShowGrabber::listDevices() const {
     
-    vector <ofVideoDevice> devices; 
+    std::vector <ofVideoDevice> devices; 
 	
     //---------------------------------
 	#ifdef OF_VIDEO_CAPTURE_DIRECTSHOW
@@ -116,7 +116,7 @@ vector<ofVideoDevice> ofDirectShowGrabber::listDevices() const {
         VI.listDevices();
         ofLogNotice() << "---";
         
-		vector <string> devList = VI.getDeviceList(); 
+		std::vector <std::string> devList = VI.getDeviceList(); 
         
         for(int i = 0; i < devList.size(); i++){
             ofVideoDevice vd; 
@@ -192,9 +192,9 @@ void ofDirectShowGrabber::update(){
 
 							int posPix = (((int)posy * inputW * 3) + ((int)posx * 3));
 
-							pixels.getPixels()[(j*width*3) + i*3    ] = viPixels[posPix  ];
-							pixels.getPixels()[(j*width*3) + i*3 + 1] = viPixels[posPix+1];
-							pixels.getPixels()[(j*width*3) + i*3 + 2] = viPixels[posPix+2];
+							pixels.getData()[(j*width*3) + i*3    ] = viPixels[posPix  ];
+							pixels.getData()[(j*width*3) + i*3 + 1] = viPixels[posPix+1];
+							pixels.getData()[(j*width*3) + i*3 + 2] = viPixels[posPix+2];
 
 						}
 					}

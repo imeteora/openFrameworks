@@ -1,41 +1,34 @@
 #pragma once
-#include "ofBaseTypes.h"
+#include "ofGLBaseTypes.h"
 #include "ofPolyline.h"
-#include "ofMatrix4x4.h"
 #include "ofShader.h"
 #include "ofMatrixStack.h"
 #include "ofVboMesh.h"
 #include "of3dGraphics.h"
 #include "ofBitmapFont.h"
 #include "ofPath.h"
+#include "ofMaterial.h"
 
 
 class ofShapeTessellation;
-class ofMesh;
 class ofFbo;
 class ofVbo;
-class ofMaterial;
 static const int OF_NO_TEXTURE=-1;
 
 class ofGLProgrammableRenderer: public ofBaseGLRenderer{
 public:
-	ofGLProgrammableRenderer(const ofAppBaseWindow * window);
-	~ofGLProgrammableRenderer();
+    ofGLProgrammableRenderer(const ofAppBaseWindow * window);
 
 	void setup(int glVersionMajor, int glVersionMinor);
 
-    static const string TYPE;
-	const string & getType(){ return TYPE; }
+    static const std::string TYPE;
+	const std::string & getType(){ return TYPE; }
     
     void startRender();
     void finishRender();
 
-	void setCurrentFBO(const ofFbo * fbo);
-    
-	void update();
 	using ofBaseRenderer::draw;
 	using ofBaseGLRenderer::draw;
-	void draw(const ofMesh & vertexData, bool useColors, bool useTextures, bool useNormals) const;
 	void draw(const ofMesh & vertexData, ofPolyRenderMode renderType, bool useColors, bool useTextures, bool useNormals) const;
     void draw(const of3dPrimitive& model, ofPolyRenderMode renderType) const;
     void draw(const ofNode& node) const;
@@ -47,7 +40,7 @@ public:
 	void draw(const ofTexture & image, float x, float y, float z, float w, float h, float sx, float sy, float sw, float sh) const;
     void draw(const ofBaseVideoDraws & video, float x, float y, float w, float h) const;
 	void draw(const ofVbo & vbo, GLuint drawMode, int first, int total) const;
-	void drawElements(const ofVbo & vbo, GLuint drawMode, int amt) const;
+	void drawElements(const ofVbo & vbo, GLuint drawMode, int amt, int offsetelements = 0) const;
 	void drawInstanced(const ofVbo & vbo, GLuint drawMode, int first, int total, int primCount) const;
 	void drawElementsInstanced(const ofVbo & vbo, GLuint drawMode, int amt, int primCount) const;
 	void draw(const ofVboMesh & mesh, ofPolyRenderMode renderType) const;
@@ -82,21 +75,21 @@ public:
 	void pushMatrix();
 	void popMatrix();
 	void translate(float x, float y, float z = 0);
-	void translate(const ofVec3f & p);
+	void translate(const glm::vec3 & p);
 	void scale(float xAmnt, float yAmnt, float zAmnt = 1);
-	void rotate(float degrees, float vecX, float vecY, float vecZ);
-	void rotateX(float degrees);
-	void rotateY(float degrees);
-	void rotateZ(float degrees);
-	void rotate(float degrees);
+	void rotateRad(float radians, float vecX, float vecY, float vecZ);
+	void rotateXRad(float radians);
+	void rotateYRad(float radians);
+	void rotateZRad(float radians);
+	void rotateRad(float radians);
 	void matrixMode(ofMatrixMode mode);
 	void loadIdentityMatrix (void);
-	void loadMatrix (const ofMatrix4x4 & m);
+	void loadMatrix (const glm::mat4 & m);
 	void loadMatrix (const float * m);
-	void multMatrix (const ofMatrix4x4 & m);
+	void multMatrix (const glm::mat4 & m);
 	void multMatrix (const float * m);
-	void loadViewMatrix(const ofMatrix4x4 & m);
-	void multViewMatrix(const ofMatrix4x4 & m);
+	void loadViewMatrix(const glm::mat4 & m);
+	void multViewMatrix(const glm::mat4 & m);
 
     /// \brief Queries the current OpenGL matrix state
     ///
@@ -113,10 +106,10 @@ public:
     /// \param	matrixMode_ Which matrix mode to query
     /// \note   If an invalid matrixMode is queried, this method will return the
     ///         identity matrix, and print an error message.
-	ofMatrix4x4 getCurrentMatrix(ofMatrixMode matrixMode_) const;
-	ofMatrix4x4 getCurrentOrientationMatrix() const;
-	ofMatrix4x4 getCurrentViewMatrix() const;
-	ofMatrix4x4 getCurrentNormalMatrix() const;
+	glm::mat4 getCurrentMatrix(ofMatrixMode matrixMode_) const;
+	glm::mat4 getCurrentOrientationMatrix() const;
+	glm::mat4 getCurrentViewMatrix() const;
+	glm::mat4 getCurrentNormalMatrix() const;
 	
 	// screen coordinate things / default gl values
 	void setupGraphicDefaults();
@@ -170,8 +163,8 @@ public:
 	void drawTriangle(float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3) const;
 	void drawCircle(float x, float y, float z, float radius) const;
 	void drawEllipse(float x, float y, float z, float width, float height) const;
-	void drawString(string text, float x, float y, float z) const;
-	void drawString(const ofTrueTypeFont & font, string text, float x, float y) const;
+	void drawString(std::string text, float x, float y, float z) const;
+	void drawString(const ofTrueTypeFont & font, std::string text, float x, float y) const;
 
 
 	void enableTextureTarget(const ofTexture & tex, int textureLocation);
@@ -183,17 +176,24 @@ public:
 	const ofShader & getCurrentShader() const;
 
 	void bind(const ofBaseMaterial & material);
-	void bind(const ofFbo & fbo, bool setupPerspective);
 	void bind(const ofShader & shader);
 	void bind(const ofTexture & texture, int location);
 	void bind(const ofBaseVideoDraws & video);
 	void bind(const ofCamera & camera, const ofRectangle & viewport);
 	void unbind(const ofBaseMaterial & material);
-	void unbind(const ofFbo & fbo);
 	void unbind(const ofShader & shader);
 	void unbind(const ofTexture & texture, int location);
 	void unbind(const ofBaseVideoDraws & video);
 	void unbind(const ofCamera & camera);
+
+	void bind(const ofFbo & fbo);
+#ifndef TARGET_OPENGLES
+	void bindForBlitting(const ofFbo & fboSrc, ofFbo & fboDst, int attachmentPoint);
+#endif
+	void unbind(const ofFbo & fbo);
+
+    void begin(const ofFbo & fbo, ofFboMode mode);
+	void end(const ofFbo & fbo);
 
 	ofStyle getStyle() const;
 	void pushStyle();
@@ -205,26 +205,26 @@ public:
 	const ofShader * getVideoShader(const ofBaseVideoDraws & video) const;
 	void setVideoShaderUniforms(const ofBaseVideoDraws & video, const ofShader & shader) const;
 
-	void enableLighting(){};
-	void disableLighting(){};
-	void enableSeparateSpecularLight(){};
-	void disableSeparateSpecularLight(){}
-	bool getLightingEnabled(){return true;}
+    void enableLighting();
+    void disableLighting();
+    bool getLightingEnabled();
+    void enableSeparateSpecularLight(){}
+    void disableSeparateSpecularLight(){}
 	void setSmoothLighting(bool b){}
 	void setGlobalAmbientColor(const ofColor& c){}
-	void enableLight(int lightIndex){}
-	void disableLight(int lightIndex){}
+    void enableLight(int lightIndex);
+    void disableLight(int lightIndex);
 	void setLightSpotlightCutOff(int lightIndex, float spotCutOff){}
 	void setLightSpotConcentration(int lightIndex, float exponent){}
 	void setLightAttenuation(int lightIndex, float constant, float linear, float quadratic ){}
 	void setLightAmbientColor(int lightIndex, const ofFloatColor& c){}
 	void setLightDiffuseColor(int lightIndex, const ofFloatColor& c){}
 	void setLightSpecularColor(int lightIndex, const ofFloatColor& c){}
-	void setLightPosition(int lightIndex, const ofVec4f & position){}
-	void setLightSpotDirection(int lightIndex, const ofVec4f & direction){}
+	void setLightPosition(int lightIndex, const glm::vec4 & position){}
+	void setLightSpotDirection(int lightIndex, const glm::vec4 & direction){}
 
-	string defaultVertexShaderHeader(GLenum textureTarget);
-	string defaultFragmentShaderHeader(GLenum textureTarget);
+	std::string defaultVertexShaderHeader(GLenum textureTarget);
+	std::string defaultFragmentShaderHeader(GLenum textureTarget);
 
 	int getGLVersionMajor();
 	int getGLVersionMinor();
@@ -234,6 +234,7 @@ public:
 
 	const of3dGraphics & get3dGraphics() const;
 	of3dGraphics & get3dGraphics();
+
 private:
 
 
@@ -266,7 +267,7 @@ private:
 	const ofShader * currentShader;
 
 	bool verticesEnabled, colorsEnabled, texCoordsEnabled, normalsEnabled, bitmapStringEnabled;
-	bool usingCustomShader, settingDefaultShader;
+	bool usingCustomShader, settingDefaultShader, usingVideoShader;
 	int currentTextureTarget;
 
 	bool wrongUseLoggedOnce;
@@ -276,12 +277,11 @@ private:
 	int alphaMaskTextureTarget;
 
 	ofStyle currentStyle;
-	deque <ofStyle> styleHistory;
+	std::deque <ofStyle> styleHistory;
 	of3dGraphics graphics3d;
 	ofBitmapFont bitmapFont;
 	ofPath path;
 	const ofAppBaseWindow * window;
-
 
 	ofShader defaultTexRectColor;
 	ofShader defaultTexRectNoColor;
@@ -289,10 +289,17 @@ private:
 	ofShader defaultTex2DNoColor;
 	ofShader defaultNoTexColor;
 	ofShader defaultNoTexNoColor;
+	ofShader defaultUniqueShader;
+#ifdef TARGET_ANDROID
+	ofShader defaultOESTexColor;
+	ofShader defaultOESTexNoColor;
+#endif
+	
 	ofShader alphaMaskRectShader;
 	ofShader alphaMask2DShader;
+	
 	ofShader bitmapStringShader;
-	ofShader defaultUniqueShader;
+	
 	ofShader shaderPlanarYUY2;
 	ofShader shaderNV12;
 	ofShader shaderNV21;
@@ -301,4 +308,16 @@ private:
 	ofShader shaderNV12Rect;
 	ofShader shaderNV21Rect;
 	ofShader shaderPlanarYUVRect;
+
+	//void setDefaultFramebufferId(const GLuint& fboId_); ///< windowing systems might use this to set the default framebuffer for this renderer.
+
+	//void pushFramebufferId(); // pushes currentFramebuffer onto framebufferStack
+	//const GLuint& popFramebufferId(); /// returns topmost element in framebufferIdStack or 0, removes topmost element from stack.
+	//const GLuint& getFramebufferId(); ///< returns current target bound to GL_FRAMEBUFFER_BINDING, initially set to defaultFramebufferId
+	//void setFramebufferId(const GLuint& fboId_); // sets the current framebuffer id
+
+	// framebuffer binding state
+	std::deque<GLuint> framebufferIdStack;	///< keeps track of currently bound framebuffers
+	GLuint defaultFramebufferId;		///< default GL_FRAMEBUFFER_BINDING, windowing frameworks might want to set this to their MSAA framebuffer, defaults to 0
+    GLuint currentFramebufferId;		///< the framebuffer id currently bound to the GL_FRAMEBUFFER target
 };

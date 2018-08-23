@@ -5,25 +5,10 @@
 void ofApp::setup(){	 
 
 	// load in sounds:
-	beat.loadSound("sounds/jdee_beat.mp3");
-	ow.loadSound("sounds/ow.mp3");	
-	dog.loadSound("sounds/dog.mp3");	
-	rooster.loadSound("sounds/rooster.mp3");
-	
-	// we will bounce a circle using these variables:
-	px = 300;
-	py = 300;
-	vx = 0;
-	vy = 0;	
-
-	// the fft needs to be smoothed out, so we create an array of floats
-	// for that purpose:
-	fftSmoothed = new float[8192];
-	for (int i = 0; i < 8192; i++){
-		fftSmoothed[i] = 0;
-	}
-	
-	nBandsToGet = 128;
+	beat.load("sounds/jdee_beat.mp3");
+	ow.load("sounds/ow.mp3");
+	dog.load("sounds/dog.mp3");
+	rooster.load("sounds/rooster.mp3");
 }
 
 
@@ -76,7 +61,7 @@ void ofApp::update(){
 	float * val = ofSoundGetSpectrum(nBandsToGet);		// request 128 values for fft
 	for (int i = 0;i < nBandsToGet; i++){
 		
-		// let the smoothed calue sink to zero:
+		// let the smoothed value sink to zero:
 		fftSmoothed[i] *= 0.96f;
 		
 		// take the max, either the smoothed or the incoming:
@@ -150,6 +135,16 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseEntered(int x, int y){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseExited(int x, int y){
 
 }
 

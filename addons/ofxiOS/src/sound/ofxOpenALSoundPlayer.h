@@ -38,11 +38,9 @@
 
 
 #include "SoundEngine.h"
-#include <CoreAudio/CoreAudioTypes.h>
-#include "ofBaseSoundPlayer.h"
-#include "ofUtils.h"
-#include "ofPoint.h"
+#include "ofSoundBaseTypes.h"
 #include "ofTypes.h"
+#include "glm/vec3.hpp"
 
 //globals
 
@@ -64,8 +62,8 @@ public:
 	ofxOpenALSoundPlayer();
 	~ofxOpenALSoundPlayer();
 	
-	bool	loadSound(string fileName, bool stream=false);
-	void	unloadSound();
+	bool	load(const std::filesystem::path& fileName, bool stream=false);
+	void	unload();
 
 	void	play();
 	void	stop();
@@ -80,16 +78,16 @@ public:
 	void	setPosition(float pct);
 	void    setPositionMS(int ms);
 
-	float	getPosition();
-	int		getPositionMS();
-	bool	getIsPlaying();
-	float	getPitch();
-	float	getSpeed(){return getPitch();}; // same as pitch. mapped for ofSoundPlayer compatibility
-	float   getVolume();
+	float	getPosition() const;
+	int	getPositionMS() const;
+	bool	isPlaying();
+	float	getPitch() const;
+	float	getSpeed() const{return getPitch();}; // same as pitch. mapped for ofSoundPlayer compatibility
+	float   getVolume() const;
     
-	float	getPan();
+	float	getPan() const;
 
-    bool    isLoaded();
+	bool    isLoaded() const;
 	
 	// IPHONE EXTRA FUNCTIONS
 	static void	vibrate();
@@ -121,13 +119,13 @@ public:
 	float	pitch;
 	float	volume;
 	unsigned int length;
-	ofPoint location;
+	glm::vec3 location;
 	
 protected: //internal
 	
 	bool    prime();
 	void	updateInternalsForNewPrime();
-	bool	loadBackgroundMusic(string fileName, bool queue, bool loadAtOnce);
+	bool	loadBackgroundMusic(std::string fileName, bool queue, bool loadAtOnce);
 	void	unloadAllBackgroundMusic();
 	void	startBackgroundMusic();
 	void	stopBackgroundMusic(bool stopNow);
@@ -137,7 +135,7 @@ protected: //internal
 	ALuint  myPrimedId;
 	bool	stopped; 	
 	bool	iAmAnMp3;
-	vector <multiPlaySource *> retainedBuffers;
+	std::vector <multiPlaySource *> retainedBuffers;
 };
 
 #endif

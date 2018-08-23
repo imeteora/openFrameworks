@@ -6,6 +6,8 @@
 //  Copyright MSA Visuals Ltd. 2010. All rights reserved.
 //
 
+#pragma once
+
 #import <QuartzCore/QuartzCore.h>
 
 #import <OpenGLES/EAGL.h>
@@ -19,10 +21,10 @@ typedef enum {
 
 @protocol ESRenderer <NSObject>
 
-- (void) startRender;
-- (void) finishRender;
+- (void)startRender;
+- (void)finishRender;
 - (BOOL)resizeFromLayer:(CAEAGLLayer *)layer;
-- (EAGLContext*) context;
+- (EAGLContext*)context;
 
 - (NSInteger)getWidth;
 - (NSInteger)getHeight;

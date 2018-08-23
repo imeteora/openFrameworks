@@ -1,3 +1,5 @@
+// Refer to the README.md in the example's root folder for more information on usage
+
 #include "ofApp.h"
 
 
@@ -14,6 +16,7 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::update(){
+	// update event slowly increments the counter variable
 	counter = counter + 0.033f;
 }
 
@@ -80,6 +83,7 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed  (int key){
+	// the key of s toggles antialiasing
 	if (key == 's'){
 		bSmooth = !bSmooth;
         if (bSmooth){
@@ -111,6 +115,16 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseEntered(int x, int y){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseExited(int x, int y){
 
 }
 

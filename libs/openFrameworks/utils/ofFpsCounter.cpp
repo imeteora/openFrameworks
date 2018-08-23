@@ -1,77 +1,80 @@
 #include "ofFpsCounter.h"
 
-#define NANOS_PER_SEC 1000000000
-#define NANOS_TO_SEC .000000001
-
-void ofGetMonotonicTime(unsigned long long & seconds, unsigned long long & nanoseconds);
-
 ofFpsCounter::ofFpsCounter()
 :nFrameCount(0)
-,secsThen(0)
-,nanosThen(0)
+,then(ofGetCurrentTime())
 ,fps(0)
-,nFramesForFPS(0)
-,secsOneSec(0)
-,nanosOneSec(0)
-,lastFrameTime(0){
-	ofGetMonotonicTime(secsThen,nanosThen);
-	secsOneSec = secsThen;
-	nanosOneSec = nanosThen;
-}
+,lastFrameTime(0)
+,filteredTime(0)
+,filterAlpha(0.9){}
 
 
 
 ofFpsCounter::ofFpsCounter(double targetFPS)
 :nFrameCount(0)
-,secsThen(0)
-,nanosThen(0)
+,then(ofGetCurrentTime())
 ,fps(targetFPS)
-,nFramesForFPS(0)
-,secsOneSec(0)
-,nanosOneSec(0)
-,lastFrameTime(0){
-	ofGetMonotonicTime(secsThen,nanosThen);
-	secsOneSec = secsThen;
-	nanosOneSec = nanosThen;
-}
+,lastFrameTime(0)
+,filteredTime(0)
+,filterAlpha(0.9){}
 
 void ofFpsCounter::newFrame(){
-	unsigned long long secsNow, nanosNow;
-	ofGetMonotonicTime(secsNow,nanosNow);
-	unsigned long long oneSecDiff = (secsNow-secsOneSec)*NANOS_PER_SEC + (long long)nanosNow-nanosOneSec;
+	auto now = ofGetCurrentTime();
+	update(now.getAsSeconds());
+	timestamps.push(now.getAsSeconds());
 
-	if( oneSecDiff  >= NANOS_PER_SEC ){
-		fps = nFramesForFPS/(oneSecDiff*NANOS_TO_SEC);
-		secsOneSec  = secsNow;
-		nanosOneSec  = nanosNow;
-		nFramesForFPS = 0;
-	}else{
-		double deltaTime = ((double)oneSecDiff)*NANOS_TO_SEC;
-		if( deltaTime > 0.0 ){
-			fps = fps*0.99 + (nFramesForFPS/deltaTime)*0.01;
-		}
+	lastFrameTime = now - then;
+	uint64_t filtered = filteredTime.count() * filterAlpha + lastFrameTime.count() * (1-filterAlpha);
+	filteredTime = std::chrono::nanoseconds(filtered);
+	then = now;
+	nFrameCount++;
+}
+
+void ofFpsCounter::update(){
+	auto now = ofGetCurrentTime();
+	update(now.getAsSeconds());
+}
+
+void ofFpsCounter::update(double now){
+	while(!timestamps.empty() && timestamps.front() + 2 < now){
+		timestamps.pop();
 	}
 
-	lastFrameTime = (secsNow-secsThen)*NANOS_PER_SEC + (long long)nanosNow-nanosThen;
-	secsThen = secsNow;
-	nanosThen = nanosNow;
-
-	nFramesForFPS++;
-	nFrameCount++;
+	auto diff = 0.0;
+	if(!timestamps.empty() && timestamps.front() + 0.5 < now){
+		diff = now - timestamps.front();
+	}
+	if(diff>0.0){
+		fps = timestamps.size() / diff;
+	}else{
+		fps = timestamps.size();
+	}
 }
 
 double ofFpsCounter::getFps() const{
 	return fps;
 }
 
-unsigned int ofFpsCounter::getNumFrames() const{
+uint64_t ofFpsCounter::getNumFrames() const{
 	return nFrameCount;
 }
 
-unsigned long long ofFpsCounter::getLastFrameNanos() const{
-	return lastFrameTime;
+uint64_t ofFpsCounter::getLastFrameNanos() const{
+	return lastFrameTime.count();
 }
 
 double ofFpsCounter::getLastFrameSecs() const{
-	return lastFrameTime*NANOS_TO_SEC;
+	return std::chrono::duration<double>(lastFrameTime).count();
+}
+
+uint64_t ofFpsCounter::getLastFrameFilteredNanos() const{
+	return lastFrameTime.count();
+}
+
+double ofFpsCounter::getLastFrameFilteredSecs() const{
+	return std::chrono::duration<double>(filteredTime).count();
+}
+
+void ofFpsCounter::setFilterAlpha(float alpha){
+	filterAlpha = alpha;
 }

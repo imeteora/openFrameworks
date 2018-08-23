@@ -3,6 +3,11 @@
 //  Created by lukasz karluk on 12/12/11.
 //
 
+#pragma once
+
+#include <TargetConditionals.h>
+#if TARGET_OS_IOS || (TARGET_OS_IPHONE && !TARGET_OS_TV)
+
 #import <UIKit/UIKit.h>
 
 class ofxiOSApp;
@@ -13,6 +18,7 @@ class ofxiOSApp;
 @property (nonatomic, retain) ofxiOSEAGLView * glView;
 
 - (id)initWithFrame:(CGRect)frame app:(ofxiOSApp *)app;
+- (id)initWithFrame:(CGRect)frame app:(ofxiOSApp *)app sharegroup:(EAGLSharegroup *)sharegroup;
 
 - (UIInterfaceOrientation)currentInterfaceOrientation;
 - (void)setCurrentInterfaceOrientation:(UIInterfaceOrientation) orient;
@@ -24,3 +30,4 @@ class ofxiOSApp;
 
 #define ofxPhoneViewController ofxiOSViewController
 
+#endif

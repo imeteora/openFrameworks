@@ -23,15 +23,21 @@
  ************************************************************************/ 
 
 #import "ofxOpenALSoundPlayer.h"
+#include "ofUtils.h"
+#include "ofFileUtils.h"
+#include "ofMath.h"
 
-bool SoundEngineInitialized = false;
+using namespace std;
 
-UInt32	numSounds;
-bool	mp3Loaded;
+namespace{
+	bool SoundEngineInitialized = false;
 
+	UInt32	numSounds;
+	bool	mp3Loaded;
+}
 
-static ofMutex& soundPlayerLock() {
-    static ofMutex* m = new ofMutex;
+static std::mutex& soundPlayerLock() {
+  static std::mutex* m = new std::mutex;
     return *m;
 }
 
@@ -62,7 +68,7 @@ ofxOpenALSoundPlayer::ofxOpenALSoundPlayer() {
 
 ofxOpenALSoundPlayer::~ofxOpenALSoundPlayer() { 
 	
-	unloadSound();
+	unload();
 	numSounds--;
 	
 	soundPlayerLock().lock();
@@ -84,12 +90,13 @@ ofxOpenALSoundPlayer::~ofxOpenALSoundPlayer() {
 
 //--------------------------------------------------------------
 
-bool ofxOpenALSoundPlayer::loadSound(string fileName, bool stream) {
+bool ofxOpenALSoundPlayer::load(const std::filesystem::path& filePath, bool stream) {
 	
 	if(!SoundEngineInitialized) {
 		ofxOpenALSoundPlayer::initializeSoundEngine();
 	}
 	
+    auto fileName = filePath.string();
 	if( fileName.length()-3 == fileName.rfind("mp3") )
 		iAmAnMp3=true;
 	
@@ -122,10 +129,10 @@ bool ofxOpenALSoundPlayer::loadSound(string fileName, bool stream) {
 
 //--------------------------------------------------------------
 
-void ofxOpenALSoundPlayer::unloadSound() {
+void ofxOpenALSoundPlayer::unload() {
 	if(bLoadedOk)
 	{
-		if ( getIsPlaying() )
+		if ( isPlaying() )
 			stop();
 		
 		bLoadedOk=false;
@@ -225,12 +232,12 @@ void ofxOpenALSoundPlayer::setPaused(bool bP) {
 	if(iAmAnMp3)
 		cerr<<"error, cannot set pause on mp3s in openAL"<<endl; // TODO
 	else {
-		bool isPlaying = getIsPlaying();
+		bool bPlaying = isPlaying();
 		bPaused = bP;
 		
-		if(bPaused && isPlaying)
+		if(bPaused && bPlaying)
 			SoundEngine_PauseEffect(myPrimedId);
-		else if(!bPaused && !isPlaying)
+		else if(!bPaused && !bPlaying)
 			play();
 	}
 }
@@ -287,7 +294,7 @@ void ofxOpenALSoundPlayer::setPositionMS(int ms){
 
 //--------------------------------------------------------------
 
-float ofxOpenALSoundPlayer::getPosition() {
+float ofxOpenALSoundPlayer::getPosition() const {
 	if ( !bLoadedOk ) 
 		return 0;
 
@@ -303,7 +310,7 @@ float ofxOpenALSoundPlayer::getPosition() {
 
 //--------------------------------------------------------------
 
-int ofxOpenALSoundPlayer::getPositionMS() {
+int ofxOpenALSoundPlayer::getPositionMS()  const{
 	if ( !bLoadedOk ) 
 		return 0;
 
@@ -319,7 +326,7 @@ int ofxOpenALSoundPlayer::getPositionMS() {
 
 //--------------------------------------------------------------
 
-bool ofxOpenALSoundPlayer::getIsPlaying() {
+bool ofxOpenALSoundPlayer::isPlaying() {
 	if ( !bLoadedOk ) 
 		return false;
 
@@ -337,24 +344,24 @@ bool ofxOpenALSoundPlayer::getIsPlaying() {
 
 //--------------------------------------------------------------
 
-float ofxOpenALSoundPlayer::getPitch() {
+float ofxOpenALSoundPlayer::getPitch()  const{
 	return pitch;
 }
 
 //--------------------------------------------------------------
 
-float ofxOpenALSoundPlayer::getPan() {
+float ofxOpenALSoundPlayer::getPan()  const{
 	return pan;
 }
 
 //--------------------------------------------------------------
 
-float ofxOpenALSoundPlayer::getVolume() {
+float ofxOpenALSoundPlayer::getVolume()  const{
     return volume;
 }
 
 //--------------------------------------------------------------
-bool ofxOpenALSoundPlayer::isLoaded() {
+bool ofxOpenALSoundPlayer::isLoaded()  const{
     return bLoadedOk;
 }
 
@@ -555,7 +562,7 @@ void ofxOpenALSoundPlayer::setLocation(float x, float y, float z) {
 		cerr<<"error, cannot set location on mp3s in openAL"<<endl;
 	else
 	{
-		location.set(x,y,z);
+		location = {x,y,z};
 		pan = ofClamp(x,-1,1); // assuming x clamp pan to -1..1
 		SoundEngine_SetEffectLocation(myPrimedId, x, y, z);
 	}

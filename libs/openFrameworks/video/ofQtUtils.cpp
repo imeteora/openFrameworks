@@ -1,6 +1,8 @@
 #include "ofQtUtils.h"
 
 #if defined (TARGET_WIN32) || (defined TARGET_OSX && !defined(MAC_OS_X_VERSION_10_7))
+#if !defined(MAC_OS_X_VERSION_10_12) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+
 #include "ofUtils.h"
 #include "ofGraphics.h"
 static bool bQuicktimeInitialized = false;
@@ -170,13 +172,13 @@ this media.
 void MovieGetVideoMediaAndMediaHandler(Movie inMovie, Media *outMedia, MediaHandler *outMediaHandler)
 {
 
-  *outMedia = NULL;
-  *outMediaHandler = NULL;
+  *outMedia = nullptr;
+  *outMediaHandler = nullptr;
 
   /* get first video track */
   Track videoTrack = GetMovieIndTrackType(inMovie, 1, kCharacteristicHasVideoFrameRate,
               movieTrackCharacteristic | movieTrackEnabledOnly);
-  if (videoTrack != NULL)
+  if (videoTrack != nullptr)
   {
     /* get media ref. for track's sample data */
     *outMedia = GetTrackMedia(videoTrack);
@@ -282,8 +284,8 @@ OSErr MediaGetStaticFrameRate(Media inMovieMedia, double *outFPS)
 OSErr GetSettingsPreference(CFStringRef inKey, UserData *outUserData)
 {
   CFPropertyListRef theCFSettings;
-  Handle            theHandle = NULL;
-  UserData          theUserData = NULL;
+  Handle            theHandle = nullptr;
+  UserData          theUserData = nullptr;
   OSErr             err = paramErr;
 
   // read the new setttings from our preferences
@@ -315,7 +317,7 @@ OSErr SaveSettingsPreference(CFStringRef inKey, UserData inUserData)
   Handle    hSettings;
   OSErr     err;
 
-  if (NULL == inUserData) return paramErr;
+  if (nullptr == inUserData) return paramErr;
 
   hSettings = NewHandle(0);
   err = MemError();
@@ -347,3 +349,4 @@ OSErr SaveSettingsPreference(CFStringRef inKey, UserData inUserData)
 #endif
 
 #endif
+#endif 

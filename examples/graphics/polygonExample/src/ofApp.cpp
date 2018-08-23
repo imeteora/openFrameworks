@@ -399,6 +399,7 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
+
 }
 
 //--------------------------------------------------------------
@@ -450,6 +451,16 @@ void ofApp::mouseReleased(int x, int y, int button){
 	for (int i = 0; i < nCurveVertices; i++){
 		curveVertices[i].bBeingDragged = false;	
 	}
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseEntered(int x, int y){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseExited(int x, int y){
+
 }
 
 //--------------------------------------------------------------

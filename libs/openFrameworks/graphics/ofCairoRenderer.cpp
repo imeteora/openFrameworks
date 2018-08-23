@@ -1,12 +1,15 @@
 #include "ofCairoRenderer.h"
 #include "ofConstants.h"
-#include "ofUtils.h"
 #include "ofMesh.h"
 #include "ofImage.h"
-#include "of3dPrimitives.h"
 #include "ofTrueTypeFont.h"
-#include "ofNode.h"
 #include "ofGraphics.h"
+#include "ofVideoBaseTypes.h"
+#include "cairo-features.h"
+#include "cairo-pdf.h"
+#include "cairo-svg.h"
+
+using namespace std;
 
 const string ofCairoRenderer::TYPE="cairo";
 
@@ -18,8 +21,8 @@ _cairo_status ofCairoRenderer::stream_function(void *closure,const unsigned char
 ofCairoRenderer::ofCairoRenderer()
 :graphics3d(this){
 	type = PDF;
-	surface = NULL;
-	cr = NULL;
+	surface = nullptr;
+	cr = nullptr;
 	bBackgroundAuto = true;
 	page = 0;
 	multiPage = false;
@@ -31,9 +34,9 @@ ofCairoRenderer::~ofCairoRenderer(){
 	close();
 }
 
-void ofCairoRenderer::setup(string _filename, Type _type, bool multiPage_, bool b3D_, ofRectangle _viewport){
-	if( _viewport.width == 0 || _viewport.height == 0 ){
-		_viewport.set(0, 0, ofGetViewportWidth(), ofGetViewportHeight());
+void ofCairoRenderer::setup(string _filename, Type _type, bool multiPage_, bool b3D_, ofRectangle outputsize){
+	if( outputsize.width == 0 || outputsize.height == 0 ){
+		outputsize.set(0, 0, ofGetViewportWidth(), ofGetViewportHeight());
 	}
 
 	filename = _filename;
@@ -65,22 +68,22 @@ void ofCairoRenderer::setup(string _filename, Type _type, bool multiPage_, bool 
 	switch(type){
 	case PDF:
 		if(filename==""){
-			surface = cairo_pdf_surface_create_for_stream(&ofCairoRenderer::stream_function,this,_viewport.width, _viewport.height);
+			surface = cairo_pdf_surface_create_for_stream(&ofCairoRenderer::stream_function,this,outputsize.width, outputsize.height);
 		}else{
-			surface = cairo_pdf_surface_create(ofToDataPath(filename).c_str(),_viewport.width, _viewport.height);
+			surface = cairo_pdf_surface_create(ofToDataPath(filename).c_str(),outputsize.width, outputsize.height);
 		}
 		break;
 	case SVG:
 		if(filename==""){
-			surface = cairo_svg_surface_create_for_stream(&ofCairoRenderer::stream_function,this,_viewport.width, _viewport.height);
+			surface = cairo_svg_surface_create_for_stream(&ofCairoRenderer::stream_function,this,outputsize.width, outputsize.height);
 		}else{
-			surface = cairo_svg_surface_create(ofToDataPath(filename).c_str(),_viewport.width, _viewport.height);
+			surface = cairo_svg_surface_create(ofToDataPath(filename).c_str(),outputsize.width, outputsize.height);
 		}
 		break;
 	case IMAGE:
-		imageBuffer.allocate(_viewport.width, _viewport.height, 4);
+		imageBuffer.allocate(outputsize.width, outputsize.height, OF_PIXELS_BGRA);
 		imageBuffer.set(0);
-		surface = cairo_image_surface_create_for_data(imageBuffer.getData(),CAIRO_FORMAT_ARGB32,_viewport.width, _viewport.height,_viewport.width*4);
+		surface = cairo_image_surface_create_for_data(imageBuffer.getData(),CAIRO_FORMAT_ARGB32,outputsize.width, outputsize.height,outputsize.width*4);
 		break;
 	case FROM_FILE_EXTENSION:
 		ofLogFatalError("ofCairoRenderer") << "setup(): couldn't determine type from extension for filename: \"" << _filename << "\"!";
@@ -92,18 +95,16 @@ void ofCairoRenderer::setup(string _filename, Type _type, bool multiPage_, bool 
 
 	cr = cairo_create(surface);
 	cairo_set_antialias(cr,CAIRO_ANTIALIAS_SUBPIXEL);
-	viewportRect = _viewport;
-	originalViewport = _viewport;
+	viewportRect = outputsize;
+	originalViewport = outputsize;
 	viewport(viewportRect);
 	page = 0;
 	b3D = b3D_;
 	multiPage = multiPage_;
-	setStyle(currentStyle);
-	clear();
 }
 
-void ofCairoRenderer::setupMemoryOnly(Type _type, bool multiPage_, bool b3D_, ofRectangle _viewport){
-	setup("",_type,multiPage_,b3D_,_viewport);
+void ofCairoRenderer::setupMemoryOnly(Type _type, bool multiPage_, bool b3D_, ofRectangle outputsize){
+	setup("",_type,multiPage_,b3D_,outputsize);
 }
 
 void ofCairoRenderer::flush(){
@@ -116,32 +117,21 @@ void ofCairoRenderer::close(){
 	if(surface){
 		cairo_surface_flush(surface);
 		if(type==IMAGE && filename!=""){
-			imageBuffer.swapRgb();
 			ofSaveImage(imageBuffer,filename);
 		}
 		cairo_surface_finish(surface);
 		cairo_surface_destroy(surface);
-		surface = NULL;
+		surface = nullptr;
 	}
 	if(cr){
 		cairo_destroy(cr);
-		cr = NULL;
+		cr = nullptr;
 	}
 }
 
 
 void ofCairoRenderer::startRender(){
-
-}
-
-void ofCairoRenderer::finishRender(){
-
-}
-
-void ofCairoRenderer::update(){
-	if(!surface || !cr)
 	setStyle(currentStyle);
-	cairo_surface_flush(surface);
 	if(page==0 || !multiPage){
 		page=1;
 	}else{
@@ -153,6 +143,10 @@ void ofCairoRenderer::update(){
 			cairo_copy_page(cr);
 		}
 	}
+}
+
+void ofCairoRenderer::finishRender(){
+	cairo_surface_flush(surface);
 }
 
 void ofCairoRenderer::setStyle(const ofStyle & style){
@@ -256,7 +250,7 @@ void ofCairoRenderer::draw(const ofPolyline & poly) const{
 	cairo_stroke( cr );
 }
 
-void ofCairoRenderer::draw(const vector<ofPoint> & vertexData, ofPrimitiveMode drawMode) const{
+void ofCairoRenderer::draw(const vector<glm::vec3> & vertexData, ofPrimitiveMode drawMode) const{
 	if(vertexData.size()==0) return;
 	ofCairoRenderer * mut_this = const_cast<ofCairoRenderer*>(this);
 	mut_this->pushMatrix();
@@ -267,8 +261,8 @@ void ofCairoRenderer::draw(const vector<ofPoint> & vertexData, ofPrimitiveMode d
 	//if(indices.getNumIndices()){
 
 		int i = 1;
-		ofVec3f v = transform(vertexData[0]);
-		ofVec3f v2;
+		auto v = transform(vertexData[0]);
+		glm::vec3 v2;
 		cairo_move_to(cr,v.x,v.y);
 		if(drawMode==OF_PRIMITIVE_TRIANGLE_STRIP){
 			v = transform(vertexData[1]);
@@ -319,24 +313,27 @@ void ofCairoRenderer::draw(const vector<ofPoint> & vertexData, ofPrimitiveMode d
 }
 
 
-ofVec3f ofCairoRenderer::transform(ofVec3f vec) const{
+glm::vec3 ofCairoRenderer::transform(glm::vec3 vec) const{
 	if(!b3D) return vec;
-	vec = modelView.preMult(vec);
-	vec = projection.preMult(vec);
+	auto vec4 = projection * modelView * glm::vec4(vec, 1.0);
+	vec = glm::vec3(vec4) / vec4.w;
 
 	//vec.set(vec.x/vec.z*viewportRect.width*0.5-ofGetWidth()*0.5-viewportRect.x,vec.y/vec.z*viewportRect.height*0.5-ofGetHeight()*0.5-viewportRect.y);
-	vec.set(vec.x/vec.z*viewportRect.width*0.5,vec.y/vec.z*viewportRect.height*0.5);
+	vec = {vec.x/vec.z*viewportRect.width*0.5, vec.y/vec.z*viewportRect.height*0.5, 0.f};
 	return vec;
 }
 
-void ofCairoRenderer::draw(const ofMesh & primitive, bool useColors, bool useTextures, bool useNormals) const{
+void ofCairoRenderer::draw(const ofMesh & primitive, ofPolyRenderMode mode, bool useColors, bool useTextures, bool useNormals) const{
+    if(useColors || useTextures || useNormals){
+        ofLogWarning("ofCairoRenderer") << "draw(): cairo mesh rendering doesn't support colors, textures, or normals. drawing wireframe ...";
+    }
 	if(primitive.getNumVertices() == 0){
 		return;
 	}
 	if(primitive.getNumIndices() == 0){
 		ofMesh indexedMesh = primitive;
 		indexedMesh.setupIndicesAuto();
-		draw(indexedMesh, useColors, useTextures, useNormals);
+		draw(indexedMesh, mode, useColors, useTextures, useNormals);
 		return;
 	}
 	cairo_new_path(cr);
@@ -345,9 +342,9 @@ void ofCairoRenderer::draw(const ofMesh & primitive, bool useColors, bool useTex
 	cairo_matrix_init_identity(&matrix);
 	cairo_new_path(cr);
 
-	int i = 1;
-	ofVec3f v = transform(primitive.getVertex(primitive.getIndex(0)));
-	ofVec3f v2;
+	std::size_t i = 1;
+	auto v = transform(primitive.getVertex(primitive.getIndex(0)));
+	glm::vec3 v2;
 	cairo_move_to(cr,v.x,v.y);
 	if(primitive.getMode()==OF_PRIMITIVE_TRIANGLE_STRIP){
 		v = transform(primitive.getVertex(primitive.getIndex(1)));
@@ -400,13 +397,6 @@ void ofCairoRenderer::draw(const ofMesh & primitive, bool useColors, bool useTex
 	}
 }
 
-void ofCairoRenderer::draw(const ofMesh & vertexData, ofPolyRenderMode mode, bool useColors, bool useTextures, bool useNormals) const{
-    if(useColors || useTextures || useNormals){
-        ofLogWarning("ofCairoRenderer") << "draw(): cairo mesh rendering doesn't support colors, textures, or normals. drawing wireframe ...";
-    }
-	draw(vertexData,false,false,false);
-}
-
 //----------------------------------------------------------
 void ofCairoRenderer::draw( const of3dPrimitive& model, ofPolyRenderMode renderType  )  const{
 
@@ -447,14 +437,14 @@ void ofCairoRenderer::draw(const ofPath::Command & command) const{
 
 		//code adapted from ofxVectorGraphics to convert catmull rom to bezier
 		if(curvePoints.size()==4){
-			ofPoint p1=curvePoints[0];
-			ofPoint p2=curvePoints[1];
-			ofPoint p3=curvePoints[2];
-			ofPoint p4=curvePoints[3];
+			auto p1=curvePoints[0];
+			auto p2=curvePoints[1];
+			auto p3=curvePoints[2];
+			auto p4=curvePoints[3];
 
 			//SUPER WEIRD MAGIC CONSTANT = 1/6 (this works 100% can someone explain it?)
-			ofPoint cp1 = p2 + ( p3 - p1 ) * (1.0f/6.f);
-			ofPoint cp2 = p3 + ( p2 - p4 ) * (1.0f/6.f);
+			auto cp1 = p2 + ( p3 - p1 ) * (1.0f/6.f);
+			auto cp2 = p3 + ( p2 - p4 ) * (1.0f/6.f);
 
 			cairo_curve_to( cr, cp1.x, cp1.y, cp2.x, cp2.y, p3.x, p3.y );
 			curvePoints.pop_front();
@@ -589,7 +579,8 @@ void ofCairoRenderer::draw(const ofPixels & raw, float x, float y, float z, floa
 		break;
 	case OF_IMAGE_UNDEFINED:
 	default:
-		ofLogError("ofCairoRenderer") << "draw(): trying to draw undefined image type " << pix.getImageType();
+		ofLogError("ofCairoRenderer") << "draw(): trying to draw undefined image type "
+			<< ofToString(pix.getImageType());
 		mut_this->popMatrix();
 		return;
 		break;
@@ -721,6 +712,7 @@ void ofCairoRenderer::setColor(int r, int g, int b){
 //--------------------------------------------
 void ofCairoRenderer::setColor(int r, int g, int b, int a){
 	cairo_set_source_rgba(cr, (float)r/255.0, (float)g/255.0, (float)b/255.0, (float)a/255.0);
+	currentStyle.color.set(r,g,b,a);
 };
 
 //--------------------------------------------
@@ -749,9 +741,9 @@ void ofCairoRenderer::setHexColor( int hexColor ){
 //--------------------------------------------
 // transformations
 //our openGL wrappers
-ofMatrix4x4 ofCairoRenderer::getCurrentMatrix(ofMatrixMode matrixMode_) const{
+glm::mat4 ofCairoRenderer::getCurrentMatrix(ofMatrixMode matrixMode_) const{
 	ofLogWarning() << "getCurrentMatrix not yet implemented for Cairo Renderer.";
-	return ofMatrix4x4();
+	return glm::mat4();
 }
 
 //----------------------------------------------------------
@@ -785,12 +777,12 @@ void ofCairoRenderer::translate(float x, float y, float z ){
 	cairo_set_matrix(cr,&matrix);
 
 	if(!b3D) return;
-	modelView.glTranslate(ofVec3f(x,y,z));
+	modelView = glm::translate(modelView, {x,y,z});
 
 }
 
 //----------------------------------------------------------
-void ofCairoRenderer::translate(const ofPoint & p){
+void ofCairoRenderer::translate(const glm::vec3 & p){
 	translate(p.x,p.y,p.z);
 }
 
@@ -803,17 +795,7 @@ void ofCairoRenderer::scale(float xAmnt, float yAmnt, float zAmnt ){
 	cairo_set_matrix(cr,&matrix);
 
 	if(!b3D) return;
-	modelView.glScale(xAmnt,yAmnt,zAmnt);
-}
-
-//----------------------------------------------------------
-void ofCairoRenderer::rotateZ(float degrees){
-    rotate(degrees,0,0,1);
-}
-
-//----------------------------------------------------------
-void ofCairoRenderer::rotate(float degrees){
-	rotateZ(degrees);
+	modelView = glm::scale(modelView, {xAmnt,yAmnt,zAmnt});
 }
 
 //----------------------------------------------------------
@@ -832,14 +814,14 @@ void ofCairoRenderer::loadIdentityMatrix (void){
 
 	if(!b3D) return;
 	if(currentMatrixMode==OF_MATRIX_MODELVIEW){
-		modelView.makeIdentityMatrix();
+		modelView = glm::mat4(1.0);
 	}else if(currentMatrixMode==OF_MATRIX_PROJECTION){
-		projection.makeIdentityMatrix();
+		projection = glm::mat4(1.0);
 	}
 }
 
 //----------------------------------------------------------
-void ofCairoRenderer::loadMatrix (const ofMatrix4x4 & m){
+void ofCairoRenderer::loadMatrix (const glm::mat4 & m){
 	if(!surface || !cr) return;
 	if(!b3D) return;
 	if(currentMatrixMode==OF_MATRIX_MODELVIEW){
@@ -851,62 +833,58 @@ void ofCairoRenderer::loadMatrix (const ofMatrix4x4 & m){
 
 //----------------------------------------------------------
 void ofCairoRenderer::loadMatrix (const float * m){
-	if(!surface || !cr) return;
-	if(!b3D) return;
-	if(currentMatrixMode==OF_MATRIX_MODELVIEW){
-		modelView.set(m);
-	}else if(currentMatrixMode==OF_MATRIX_PROJECTION){
-		projection.set(m);
-	}
-
+	loadMatrix(glm::make_mat4(m));
 }
 
 //----------------------------------------------------------
-void ofCairoRenderer::multMatrix (const ofMatrix4x4 & m){
+void ofCairoRenderer::multMatrix (const glm::mat4 & m){
 	if(!surface || !cr) return;
 	if(!b3D) return;
 	if(currentMatrixMode==OF_MATRIX_MODELVIEW){
-		modelView *= m;
+		modelView = m * modelView;
 	}else if(currentMatrixMode==OF_MATRIX_PROJECTION){
-		projection *= m;
+		projection = m * projection;
 	}
 }
 
 //----------------------------------------------------------
 void ofCairoRenderer::multMatrix (const float * m){
-	if(!surface || !cr) return;
-	if(!b3D) return;
-	ofMatrix4x4 mat(m);
-	if(currentMatrixMode==OF_MATRIX_MODELVIEW){
-		modelView *= mat;
-	}else if(currentMatrixMode==OF_MATRIX_PROJECTION){
-		projection *= mat;
-	}
+	multMatrix(glm::make_mat4(m));
 }
 
 //----------------------------------------------------------
-void ofCairoRenderer::rotate(float degrees, float vecX, float vecY, float vecZ){
+void ofCairoRenderer::rotateRad(float radians, float vecX, float vecY, float vecZ){
     if(!surface || !cr) return;
 
     // we can only do Z-axis rotations via cairo_matrix_rotate.
     if(vecZ == 1.0f) {
     	cairo_matrix_t matrix;
     	cairo_get_matrix(cr,&matrix);
-        cairo_matrix_rotate(&matrix,degrees*DEG_TO_RAD);
+		cairo_matrix_rotate(&matrix,radians);
         cairo_set_matrix(cr,&matrix);
     }
 
     if(!b3D) return;
-    modelView.glRotate(degrees,vecX,vecY,vecZ);
+	modelView = glm::rotate(modelView, radians, glm::vec3(vecX,vecY,vecZ));
 }
 
 //----------------------------------------------------------
-void ofCairoRenderer::rotateX(float degrees){
-	rotate(degrees,1,0,0);
+void ofCairoRenderer::rotateXRad(float radians){
+	rotateRad(radians,1,0,0);
 }
 //----------------------------------------------------------
-void ofCairoRenderer::rotateY(float degrees){
-	rotate(degrees,0,1,0);
+void ofCairoRenderer::rotateYRad(float radians){
+	rotateRad(radians,0,1,0);
+}
+
+//----------------------------------------------------------
+void ofCairoRenderer::rotateZRad(float radians){
+	rotateRad(radians,0,0,1);
+}
+
+//----------------------------------------------------------
+void ofCairoRenderer::rotateRad(float radians){
+	rotateZRad(radians);
 }
 
 //----------------------------------------------------------
@@ -940,6 +918,7 @@ void ofCairoRenderer::viewport(ofRectangle v){
 void ofCairoRenderer::viewport(float x, float y, float width, float height, bool invertY){
 	if(width < 0) width = originalViewport.width;
 	if(height < 0) height = originalViewport.height;
+    ofLogVerbose("ofCairoRenderer::viewport") << "Setting viewport to:" << width << ", " << height;
 
 	if (invertY){
 		y = -y;
@@ -960,12 +939,12 @@ void ofCairoRenderer::viewport(float x, float y, float width, float height, bool
 //----------------------------------------------------------
 void ofCairoRenderer::setupScreenPerspective(float width, float height, float fov, float nearDist, float farDist){
 	if(!b3D) return;
-	if(width < 0) width = viewportRect.width;
-	if(height < 0) height = viewportRect.height;
+	if(width < 0) width = originalViewport.width;
+	if(height < 0) height = originalViewport.height;
 	ofOrientation orientation = ofGetOrientation();
 
-	float viewW = viewportRect.width;
-	float viewH = viewportRect.height;
+	float viewW = originalViewport.width;
+	float viewH = originalViewport.height;
 
 	float eyeX = viewW / 2;
 	float eyeY = viewH / 2;
@@ -977,50 +956,44 @@ void ofCairoRenderer::setupScreenPerspective(float width, float height, float fo
 	if(nearDist == 0) nearDist = dist / 10.0f;
 	if(farDist == 0) farDist = dist * 10.0f;
 
-	projection.makePerspectiveMatrix(fov,aspect,nearDist,farDist);
-	modelView.makeLookAtViewMatrix(ofVec3f(eyeX,eyeY,dist),ofVec3f(eyeX,eyeY,0),ofVec3f(0,1,0));
+	projection = glm::perspective(ofDegToRad(fov),aspect,nearDist,farDist);
+	modelView = glm::lookAt(glm::vec3(eyeX,eyeY,dist),glm::vec3(eyeX,eyeY,0),glm::vec3(0,1,0));
 
 
-	//note - theo checked this on iPhone and Desktop for both vFlip = false and true
 	switch(orientation) {
 		case OF_ORIENTATION_180:
-			modelView.glRotate(-180,0,0,1);
+			modelView = glm::rotate(modelView,-glm::pi<float>(),glm::vec3(0,0,1));
 			if(isVFlipped()){
-				modelView.glScale(-1,-1,1);
-				modelView.glTranslate(width,0,0);
+				modelView = glm::scale(modelView, glm::vec3(-1,1,1));
+				modelView = glm::translate(modelView, glm::vec3(width,0,0));
 			}else{
-				modelView.glTranslate(width,-height,0);
+				modelView = glm::translate(modelView, glm::vec3(width, -height, 0));
 			}
 
 			break;
 
 		case OF_ORIENTATION_90_RIGHT:
-			modelView.glRotate(-90,0,0,1);
-			if(isVFlipped()){
-				modelView.glScale(1,1,1);
-			}else{
-				modelView.glScale(1,-1,1);
-				modelView.glTranslate(-width,-height,0);
+			modelView = glm::rotate(modelView,-glm::half_pi<float>(),glm::vec3(0,0,1));
+			if(!isVFlipped()){
+				modelView = glm::scale(modelView, glm::vec3(1,-1,1));
+				modelView = glm::translate(modelView, glm::vec3(-width,-height,0));
 			}
 			break;
 
 		case OF_ORIENTATION_90_LEFT:
-			modelView.glRotate(90,0,0,1);
+			modelView = glm::rotate(modelView,glm::half_pi<float>(),glm::vec3(0,0,1));
 			if(isVFlipped()){
-				modelView.glScale(1,1,1);
-				modelView.glTranslate(0,-height,0);
+				modelView = glm::translate(modelView, glm::vec3(0,-height,0));
 			}else{
-
-				modelView.glScale(1,-1,1);
-				modelView.glTranslate(0,0,0);
+				modelView = glm::scale(modelView, glm::vec3(1,-1,1));
 			}
 			break;
 
 		case OF_ORIENTATION_DEFAULT:
 		default:
 			if(isVFlipped()){
-				modelView.glScale(-1,-1,1);
-				modelView.glTranslate(-width,-height,0);
+				modelView = glm::scale(modelView, glm::vec3(-1,-1,1));
+				modelView = glm::translate(modelView, glm::vec3(-width,-height,0));
 			}
 			break;
 	}
@@ -1041,50 +1014,44 @@ void ofCairoRenderer::setupScreenOrtho(float width, float height, float nearDist
 	if(isVFlipped()) {
 		ofSetCoordHandedness(OF_LEFT_HANDED);
 	}
-	projection.makeOrthoMatrix(0, viewW, 0, viewH, nearDist, farDist);
+	projection = glm::ortho(0.f, viewW, 0.f, viewH, nearDist, farDist);
 
-	modelView.makeIdentityMatrix();
+	modelView = glm::mat4(1.0f);
 
-	//note - theo checked this on iPhone and Desktop for both vFlip = false and true
 	switch(orientation) {
 		case OF_ORIENTATION_180:
-			modelView.glRotate(-180,0,0,1);
+			modelView = glm::rotate(modelView,-glm::pi<float>(),glm::vec3(0,0,1));
 			if(isVFlipped()){
-				modelView.glScale(-1,-1,1);
-				modelView.glTranslate(width,0,0);
+				modelView = glm::scale(modelView, glm::vec3(-1,1,1));
+				modelView = glm::translate(modelView, glm::vec3(width,0,0));
 			}else{
-				modelView.glTranslate(width,-height,0);
+				modelView = glm::translate(modelView, glm::vec3(width, -height, 0));
 			}
 
 			break;
 
 		case OF_ORIENTATION_90_RIGHT:
-			modelView.glRotate(-90,0,0,1);
-			if(isVFlipped()){
-				modelView.glScale(1,1,1);
-			}else{
-				modelView.glScale(1,-1,1);
-				modelView.glTranslate(-width,-height,0);
+			modelView = glm::rotate(modelView,-glm::half_pi<float>(),glm::vec3(0,0,1));
+			if(!isVFlipped()){
+				modelView = glm::scale(modelView, glm::vec3(1,-1,1));
+				modelView = glm::translate(modelView, glm::vec3(-width,-height,0));
 			}
 			break;
 
 		case OF_ORIENTATION_90_LEFT:
-			modelView.glRotate(90,0,0,1);
+			modelView = glm::rotate(modelView,glm::half_pi<float>(),glm::vec3(0,0,1));
 			if(isVFlipped()){
-				modelView.glScale(1,1,1);
-				modelView.glTranslate(0,-height,0);
+				modelView = glm::translate(modelView, glm::vec3(0,-height,0));
 			}else{
-
-				modelView.glScale(1,-1,1);
-				modelView.glTranslate(0,0,0);
+				modelView = glm::scale(modelView, glm::vec3(1,-1,1));
 			}
 			break;
 
 		case OF_ORIENTATION_DEFAULT:
 		default:
 			if(isVFlipped()){
-				modelView.glScale(-1,-1,1);
-				modelView.glTranslate(-width,-height,0);
+				modelView = glm::scale(modelView, glm::vec3(-1,-1,1));
+				modelView = glm::translate(modelView, glm::vec3(-width,-height,0));
 			}
 			break;
 	}
@@ -1121,31 +1088,31 @@ bool ofCairoRenderer::isVFlipped() const{
 }
 
 //----------------------------------------------------------
-void ofCairoRenderer::loadViewMatrix(const ofMatrix4x4 & m){
+void ofCairoRenderer::loadViewMatrix(const glm::mat4 & m){
 	ofLogError("ofCairoRenderer") << "view matrix not supported yet";
 }
 
 //----------------------------------------------------------
-void ofCairoRenderer::multViewMatrix(const ofMatrix4x4 & m){
+void ofCairoRenderer::multViewMatrix(const glm::mat4 & m){
 	ofLogError("ofCairoRenderer") << "view matrix not supported yet";
 }
 
 //----------------------------------------------------------
-ofMatrix4x4 ofCairoRenderer::getCurrentViewMatrix() const{
+glm::mat4 ofCairoRenderer::getCurrentViewMatrix() const{
 	ofLogError("ofCairoRenderer") << "view matrix not supported yet";
-	return ofMatrix4x4::newIdentityMatrix();
+	return glm::mat4(1.0);
 }
 
 //----------------------------------------------------------
-ofMatrix4x4 ofCairoRenderer::getCurrentNormalMatrix() const{
+glm::mat4 ofCairoRenderer::getCurrentNormalMatrix() const{
 	ofLogError("ofCairoRenderer") << "normal matrix not supported yet";
-	return ofMatrix4x4::newIdentityMatrix();
+	return glm::mat4(1.0);
 }
 
 //----------------------------------------------------------
-ofMatrix4x4 ofCairoRenderer::getCurrentOrientationMatrix() const{
+glm::mat4 ofCairoRenderer::getCurrentOrientationMatrix() const{
 	ofLogError("ofCairoRenderer") << "orientation matrix not supported yet";
-	return ofMatrix4x4::newIdentityMatrix();
+	return glm::mat4(1.0);
 }
 
 //----------------------------------------------------------
@@ -1173,6 +1140,7 @@ void ofCairoRenderer::setupGraphicDefaults(){
 	setStyle(ofStyle());
 	path.setMode(ofPath::COMMANDS);
 	path.setUseShapeColor(false);
+	clear();
 };
 
 //----------------------------------------------------------
@@ -1180,6 +1148,7 @@ void ofCairoRenderer::clear(){
 	if(!surface || ! cr) return;
 	cairo_set_source_rgba(cr,currentStyle.bgColor.r/255., currentStyle.bgColor.g/255., currentStyle.bgColor.b/255., currentStyle.bgColor.a/255.);
 	cairo_paint(cr);
+	setColor(currentStyle.color);
 }
 
 //----------------------------------------------------------
@@ -1187,6 +1156,7 @@ void ofCairoRenderer::clear(float r, float g, float b, float a) {
 	if(!surface || ! cr) return;
 	cairo_set_source_rgba(cr,r/255., g/255., b/255., a/255.);
 	cairo_paint(cr);
+	setColor(currentStyle.color);
 
 }
 
@@ -1220,7 +1190,7 @@ void ofCairoRenderer::pushStyle(){
 
 void ofCairoRenderer::popStyle(){
 	if( styleHistory.size() ){
-		setStyle(styleHistory.front());
+		setStyle(styleHistory.back());
 		styleHistory.pop_back();
 	}
 }
@@ -1353,7 +1323,7 @@ void ofCairoRenderer::drawEllipse(float x, float y, float z, float width, float 
 	mutThis->translate(0,-y*ellipse_ratio);
 	mutThis->scale(1,ellipse_ratio);
 	mutThis->translate(0,y/ellipse_ratio);
-	cairo_arc(cr,x,y,width*0.5,0,360);
+	cairo_arc(cr,x,y,width*0.5,0,2*PI);
 	mutThis->popMatrix();
 
 	cairo_close_path(cr);

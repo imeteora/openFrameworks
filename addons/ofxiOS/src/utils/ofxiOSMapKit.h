@@ -30,11 +30,14 @@
 
 #pragma once
 
-#include <Availability.h>
+#include <TargetConditionals.h>
+#if TARGET_OS_IOS || (TARGET_OS_IPHONE && !TARGET_OS_TV)
 
-#include "ofMain.h"
-#include <MapKit/MapKit.h>
+#import <MapKit/MapKit.h>
+#include "ofConstants.h"
 #include "ofxiOSMapKitListener.h"
+#include "glm/vec2.hpp"
+#include "ofRectangle.h"
 #include <list>
 
 // these are the types you can set for the map
@@ -105,7 +108,7 @@ public:
 	
 	
 	// convert location (latitude, longitude) to screen coordinates (i.e. pixels)
-	ofPoint getScreenCoordinatesForLocation(double latitude, double longitude);
+	glm::vec2 getScreenCoordinatesForLocation(double latitude, double longitude);
 	
 	// convert screen coordinates (i.e. pixels) to location (latitude, longitude)
 	ofxMapKitLocation getLocationForScreenCoordinates(float x, float y);
@@ -130,7 +133,7 @@ public:
 	void regionDidChange(bool animated);
 	void willStartLoadingMap();
 	void didFinishLoadingMap();
-	void errorLoadingMap(string errorDescription);
+	void errorLoadingMap(std::string errorDescription);
 	
 
 	// return instance to MKMapView
@@ -158,4 +161,6 @@ protected:
 #define ofxiPhone_MAPKIT_HYRBID     OFXIOS_MAPKIT_HYRBID
 #define ofxiPhoneMapKit ofxiOSMapKit
 //-------------------------------------------------------------------------------
+
+#endif
 

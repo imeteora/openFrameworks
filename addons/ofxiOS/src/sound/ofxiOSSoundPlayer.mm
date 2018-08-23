@@ -5,19 +5,23 @@
 //
 
 #include "ofxiOSSoundPlayer.h"
+#include "ofUtils.h"
+#include "ofLog.h"
 #import "AVSoundPlayer.h"
+
+using namespace std;
 
 ofxiOSSoundPlayer::ofxiOSSoundPlayer() {
     soundPlayer = NULL;
 }
 
 ofxiOSSoundPlayer::~ofxiOSSoundPlayer() {
-    unloadSound();
+    unload();
 }
 
-bool ofxiOSSoundPlayer::loadSound(string fileName, bool stream) {
+bool ofxiOSSoundPlayer::load(const std::filesystem::path& fileName, bool stream) {
     if(soundPlayer != NULL) {
-        unloadSound();
+        unload();
     }
 
     string filePath = ofToDataPath(fileName);
@@ -27,7 +31,7 @@ bool ofxiOSSoundPlayer::loadSound(string fileName, bool stream) {
     return bOk;
 }
 
-void ofxiOSSoundPlayer::unloadSound() {
+void ofxiOSSoundPlayer::unload() {
     if(soundPlayer != NULL) {
         [(AVSoundPlayer *)soundPlayer unloadSound];
         [(AVSoundPlayer *)soundPlayer release];
@@ -110,49 +114,49 @@ void ofxiOSSoundPlayer::setPositionMS(int positionMS) {
     [(AVSoundPlayer *)soundPlayer positionMs:positionMS];
 }
 
-float ofxiOSSoundPlayer::getPosition() {
+float ofxiOSSoundPlayer::getPosition()  const{
     if(soundPlayer == NULL) {
         return 0;
     }
     return [(AVSoundPlayer *)soundPlayer position];
 }
 
-int ofxiOSSoundPlayer::getPositionMS() {
+int ofxiOSSoundPlayer::getPositionMS() const {
     if(soundPlayer == NULL) {
         return 0;
     }
     return [(AVSoundPlayer *)soundPlayer positionMs];
 }
 
-bool ofxiOSSoundPlayer::getIsPlaying() {
+bool ofxiOSSoundPlayer::isPlaying()  const{
     if(soundPlayer == NULL) {
         return false;
     }
     return [(AVSoundPlayer *)soundPlayer isPlaying];
 }
 
-float ofxiOSSoundPlayer::getSpeed() {
+float ofxiOSSoundPlayer::getSpeed()  const{
     if(soundPlayer == NULL) {
         return 0;
     }
     return [(AVSoundPlayer *)soundPlayer speed];
 }
 
-float ofxiOSSoundPlayer::getPan() {
+float ofxiOSSoundPlayer::getPan()  const{
     if(soundPlayer == NULL) {
         return 0;
     }
     return [(AVSoundPlayer *)soundPlayer pan];
 }
 
-bool ofxiOSSoundPlayer::isLoaded() {
+bool ofxiOSSoundPlayer::isLoaded()  const{
     if(soundPlayer == NULL) {
         return false;
     }
     return [(AVSoundPlayer *)soundPlayer isLoaded];
 }
 
-float ofxiOSSoundPlayer::getVolume() {
+float ofxiOSSoundPlayer::getVolume()  const{
     if(soundPlayer == NULL) {
         return false;
     }

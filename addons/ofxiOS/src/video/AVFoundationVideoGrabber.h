@@ -3,18 +3,18 @@
  */
 
 #pragma once
+#include <TargetConditionals.h>
+#if TARGET_OS_IOS || (TARGET_OS_IPHONE && !TARGET_OS_TV)
 
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import <CoreGraphics/CoreGraphics.h>
 #import <CoreVideo/CoreVideo.h>
 #import <CoreMedia/CoreMedia.h>
-#include "ofxiOS.h"
-#include "ofxiOSExtras.h"
-
+#include "ofTexture.h"
+#include "ofVideoBaseTypes.h"
 
 class AVFoundationVideoGrabber;
-
 
 @interface iOSVideoGrabber : UIViewController <AVCaptureVideoDataOutputSampleBufferDelegate> {
 
@@ -34,7 +34,7 @@ class AVFoundationVideoGrabber;
 -(void)startCapture;
 -(void)stopCapture;
 -(void)lockExposureAndFocus;
--(vector <string>)listDevices;
+-(std::vector <std::string>)listDevices;
 -(void)setDevice:(int)_device;
 -(void)eraseGrabberPtr;
 
@@ -59,7 +59,7 @@ class AVFoundationVideoGrabber{
 	
 		bool isFrameNew();
 		
-		vector <ofVideoDevice> listDevices();
+		std::vector <ofVideoDevice> listDevices();
 		void setDevice(int deviceID);
 		bool setPixelFormat(ofPixelFormat PixelFormat);
 		ofPixelFormat getPixelFormat();
@@ -93,6 +93,8 @@ class AVFoundationVideoGrabber{
 		iOSVideoGrabber * grabber;
 		GLubyte *pixelsTmp;
 };
+
+#endif
 
 
 

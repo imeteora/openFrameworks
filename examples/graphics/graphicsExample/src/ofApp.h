@@ -1,3 +1,5 @@
+// Refer to the README.md in the example's root folder for more information on usage
+
 #pragma once
 
 #include "ofMain.h"
@@ -16,10 +18,13 @@ class ofApp : public ofBaseApp{
 		void mouseDragged(int x, int y, int button);
 		void mousePressed(int x, int y, int button);
 		void mouseReleased(int x, int y, int button);
+		void mouseEntered(int x, int y);
+		void mouseExited(int x, int y);
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);		
 		
+		// variables used in the example
 		float 	counter;
 		bool	bSmooth;
 };

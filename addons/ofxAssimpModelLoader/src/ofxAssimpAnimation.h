@@ -5,15 +5,17 @@
 
 #pragma once
 
-#include "ofMain.h"
-#include "assimp.h"
-#include "aiScene.h"
+#include "ofVideoBaseTypes.h"
+
+#include <assimp/cimport.h>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 class ofxAssimpAnimation {
 
 public:
     
-    ofxAssimpAnimation(shared_ptr<const aiScene> scene, aiAnimation * animation);
+	ofxAssimpAnimation(std::shared_ptr<const aiScene> scene, aiAnimation * animation);
     ~ofxAssimpAnimation();
     
     aiAnimation * getAnimation();
@@ -45,7 +47,7 @@ protected:
     
     void updateAnimationNodes();
     
-    shared_ptr<const aiScene> scene;
+	std::shared_ptr<const aiScene> scene;
     aiAnimation * animation;
     float animationCurrTime;
     float animationPrevTime;

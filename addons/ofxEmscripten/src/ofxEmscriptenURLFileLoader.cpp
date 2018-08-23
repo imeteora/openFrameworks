@@ -6,8 +6,10 @@
  */
 
 #include "ofxEmscriptenURLFileLoader.h"
+#include "ofLog.h"
 #include <emscripten/emscripten.h>
 
+using namespace std;
 
 ofxEmscriptenURLFileLoader::ofxEmscriptenURLFileLoader() {
 }
@@ -15,30 +17,40 @@ ofxEmscriptenURLFileLoader::ofxEmscriptenURLFileLoader() {
 ofxEmscriptenURLFileLoader::~ofxEmscriptenURLFileLoader() {
 }
 
-ofHttpResponse ofxEmscriptenURLFileLoader::get(string url){
+ofHttpResponse ofxEmscriptenURLFileLoader::get(const string & url){
 	getAsync(url,url);
 	return ofHttpResponse();
 }
 
-int ofxEmscriptenURLFileLoader::getAsync(string url, string name){
+int ofxEmscriptenURLFileLoader::getAsync(const string &  url, const string &  name){
 	ofHttpRequest * req = new ofHttpRequest(url,name,false);
 #if __EMSCRIPTEN_major__>1 || (__EMSCRIPTEN_major__==1 && __EMSCRIPTEN_minor__>22)
 	emscripten_async_wget2_data(url.c_str(), "GET", "", req, true, &onload_cb, &onerror_cb, NULL);
 #endif
-	return req->getID();
+	return req->getId();
 }
 
-ofHttpResponse ofxEmscriptenURLFileLoader::saveTo(string url, string path){
+ofHttpResponse ofxEmscriptenURLFileLoader::saveTo(const string &  url, const std::filesystem::path &  path){
 	saveAsync(url,path);
 	return ofHttpResponse();
 }
 
-int ofxEmscriptenURLFileLoader::saveAsync(string url, string path){
+int ofxEmscriptenURLFileLoader::saveAsync(const string &  url, const std::filesystem::path &  path){
 	ofHttpRequest * req = new ofHttpRequest(url,url,true);
 #if __EMSCRIPTEN_major__>1 || (__EMSCRIPTEN_major__==1 && __EMSCRIPTEN_minor__>22)
 	emscripten_async_wget2(url.c_str(), path.c_str(), "GET", "", req, &onload_file_cb, &onerror_file_cb, NULL);
 #endif
 	return 0;
+}
+
+ofHttpResponse handleRequest(const ofHttpRequest & request){
+	ofLogWarning() << "handleRequest is still not implemented on emscripten";
+	return ofHttpResponse();
+}
+
+int handleRequestAsync(const ofHttpRequest & request){
+	ofLogWarning() << "handleRequest is still not implemented on emscripten";
+	return -1;
 }
 
 void ofxEmscriptenURLFileLoader::remove(int id){

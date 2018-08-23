@@ -1,6 +1,11 @@
-#import "ofxiOSVideoPlayer.h"
-#import "ofxiOSExtras.h"
+#include "ofxiOSVideoPlayer.h"
+#include "ofxiOSExtras.h"
+#include "ofxiOSEAGLView.h"
 #import "AVFoundationVideoPlayer.h"
+#include "ofGLUtils.h"
+#include "ofMath.h"
+
+using namespace std;
 
 CVOpenGLESTextureCacheRef _videoTextureCache = NULL;
 CVOpenGLESTextureRef _videoTextureRef = NULL;
@@ -13,7 +18,7 @@ ofxiOSVideoPlayer::ofxiOSVideoPlayer() {
     bResetPixels = false;
     bUpdatePixels = false;
     bUpdateTexture = false;
-    bTextureCacheSupported = (CVOpenGLESTextureCacheCreate != NULL);
+    bTextureCacheSupported = (&CVOpenGLESTextureCacheCreate != NULL);
     bTextureCacheEnabled = true;
 }
 
@@ -101,7 +106,7 @@ bool ofxiOSVideoPlayer::setPixelFormat(ofPixelFormat value) {
     bValid = bValid || (value == OF_PIXELS_RGBA);
     
     if(bValid == false) {
-        ofLogWarning("ofxiOSVideoPlayer::setPixelFormat()") << "unsupported ofPixelFormat " << value;
+        ofLogWarning("ofxiOSVideoPlayer::setPixelFormat()") << "unsupported ofPixelFormat " << ofToString(value);
         return false;
     }
     
@@ -205,9 +210,9 @@ ofPixels & ofxiOSVideoPlayer::getPixels() {
     
     vImage_Buffer dest = {
         pixels.getData(),
-        pixels.getHeight(),
-        pixels.getWidth(),
-        pixels.getWidth() * pixels.getNumChannels()
+        static_cast<vImagePixelCount>(pixels.getHeight()),
+        static_cast<vImagePixelCount>(pixels.getWidth()),
+        static_cast<size_t>(pixels.getWidth() * pixels.getNumChannels())
     };
     
     vImage_Error err = kvImageNoError;
@@ -343,7 +348,7 @@ void ofxiOSVideoPlayer::initTextureCache() {
                                                        imageBuffer,             // CVImageBufferRef sourceImage
                                                        NULL,                    // CFDictionaryRef textureAttributes
                                                        texData.textureTarget,   // GLenum target
-                                                       texData.glTypeInternal,  // GLint internalFormat
+                                                       texData.glInternalFormat,  // GLint internalFormat
                                                        texData.width,           // GLsizei width
                                                        texData.height,          // GLsizei height
                                                        GL_BGRA,                 // GLenum format

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 export LC_ALL=C
 
@@ -9,28 +9,36 @@ else
         LIBSPATH=linux
 fi
 
-WHO=`who am i`;ID=`echo ${WHO%% *}`
-GROUP_ID=`id --group -n ${ID}`
+pushd `dirname $0` > /dev/null
+SCRIPTPATH=`pwd`
+popd > /dev/null
 
-cd ../../libs/openFrameworksCompiled/project
-make Debug
+BUILD="install"
+JOBS=1
+while getopts tj: opt ; do
+	case "$opt" in
+		t)  # testing, only build Debug
+		    BUILD="test" ;;
+		j)  # make job count for parallel build
+		    JOBS="$OPTARG"
+	esac
+done
+
+cd ${SCRIPTPATH}/../../libs/openFrameworksCompiled/project
+make -j$JOBS Debug
 exit_code=$?
 if [ $exit_code != 0 ]; then
   echo "there has been a problem compiling Debug OF library"
   echo "please report this problem in the forums"
-  chown -R $ID:$GROUP_ID ../lib/${LIBSPATH}/*
   exit $exit_code
 fi
 
-make Release
-exit_code=$?
-if [ $exit_code != 0 ]; then
-  echo "there has been a problem compiling Release OF library"
-  echo "please report this problem in the forums"
-  chown -R $ID:$GROUP_ID ../lib/${LIBSPATH}/*
-  exit $exit_code
+if [ "$BUILD" == "install" ]; then
+    make -j$JOBS Release
+    exit_code=$?
+    if [ $exit_code != 0 ]; then
+      echo "there has been a problem compiling Release OF library"
+      echo "please report this problem in the forums"
+      exit $exit_code
+    fi
 fi
-
-chown -R $ID:$GROUP_ID ../lib/${LIBSPATH}/*
-
-

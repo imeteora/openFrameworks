@@ -6,11 +6,13 @@
  *
  */
 
+#pragma once
+
+#include <TargetConditionals.h>
+#if TARGET_OS_IOS || (TARGET_OS_IPHONE && !TARGET_OS_TV)
+
 #import <UIKit/UIKit.h>
-#import <OpenGLES/ES1/gl.h>
-#import "ofMain.h"
-#include <iostream>
-#include <Availability.h>
+#include "ofPixels.h"
 
 #define OFX_IMG_PICKER_UP 1
 #define OFX_IMG_PICKER_DOWN 2
@@ -117,7 +119,7 @@ public:
 	
     bool getImageUpdated();
     unsigned char * 	getPixels();
-    ofPixelsRef			getPixelsRef();
+    ofPixels &			getPixelsRef();
     int getWidth();
     int getHeight();
     
@@ -134,3 +136,5 @@ protected:
 };
 
 #define ofxiPhoneImagePicker ofxiOSImagePicker; 
+
+#endif

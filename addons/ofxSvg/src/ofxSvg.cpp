@@ -1,6 +1,11 @@
 #include "ofxSvg.h"
 #include "ofConstants.h"
 
+using namespace std;
+
+extern "C"{
+	#include "svgtiny.h"
+}
 ofxSVG::~ofxSVG(){
 	paths.clear();
 }
@@ -26,9 +31,9 @@ void ofxSVG::load(string path){
 			 msg = "svgtiny_OUT_OF_MEMORY";
 			 break;
 
-		 case svgtiny_LIBXML_ERROR:
+		 /*case svgtiny_LIBXML_ERROR:
 			 msg = "svgtiny_LIBXML_ERROR";
-			 break;
+			 break;*/
 
 		 case svgtiny_NOT_SVG:
 			 msg = "svgtiny_NOT_SVG";
@@ -115,4 +120,8 @@ void ofxSVG::setupShape(struct svgtiny_shape * shape, ofPath & path){
 			i += 1;
 		}
 	}
+}
+
+const vector <ofPath> & ofxSVG::getPaths() const{
+    return paths;
 }

@@ -84,8 +84,8 @@ void ofApp::loadLUT(string path){
 void ofApp::applyLUT(ofPixelsRef pix){
 	if (LUTloaded) {
 		
-		for(int y = 0; y < pix.getHeight(); y++){
-			for(int x = 0; x < pix.getWidth(); x++){
+		for(size_t y = 0; y < pix.getHeight(); y++){
+			for(size_t x = 0; x < pix.getWidth(); x++){
 				
 				ofColor color = pix.getColor(x, y);
 				
@@ -166,3 +166,27 @@ void ofApp::mouseReleased(int x, int y, int button){
 
 }
 
+//--------------------------------------------------------------
+void ofApp::mouseEntered(int x, int y){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseExited(int x, int y){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::windowResized(int w, int h){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::gotMessage(ofMessage msg){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::dragEvent(ofDragInfo dragInfo){ 
+
+}

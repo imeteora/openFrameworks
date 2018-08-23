@@ -1,5 +1,8 @@
 #include "ofSoundPlayer.h"
-#include "ofUtils.h"
+#include "ofLog.h"
+#include "glm/common.hpp"
+
+using namespace std;
 
 // these are global functions, that affect every sound / channel:
 // ------------------------------------------------------------
@@ -27,8 +30,6 @@ void ofSoundSetVolume(float vol){
 void ofSoundUpdate(){
 	#ifdef OF_SOUND_PLAYER_FMOD
 		ofFmodSoundUpdate();
-	#else
-		ofLogWarning("ofSoundPlayer") << "ofSoundUpdate() not implemented on this platform";
 	#endif
 }
 
@@ -52,15 +53,16 @@ float * ofSoundGetSpectrum(int nBands){
 	#elif defined(OF_SOUND_PLAYER_EMSCRIPTEN)
 		return ofxEmscriptenSoundPlayer::getSystemSpectrum(nBands);
 	#else
-		ofLogWarning("ofSoundPlayer") << "ofSoundGetSpectrum() not implemented on this platform, returning NULL";
-		return NULL;
+		ofLogWarning("ofSoundPlayer") << "ofSoundGetSpectrum() not implemented on this platform, returning nullptr";
+		return nullptr;
 	#endif
 }
 
-#include "ofSoundPlayer.h"
 //---------------------------------------------------------------------------
 ofSoundPlayer::ofSoundPlayer (){
-	player	= shared_ptr<OF_SOUND_PLAYER_TYPE>(new OF_SOUND_PLAYER_TYPE);
+#ifdef OF_SOUND_PLAYER_TYPE
+	player	= std::make_shared<OF_SOUND_PLAYER_TYPE>();
+#endif
 }
 
 //---------------------------------------------------------------------------
@@ -74,18 +76,28 @@ shared_ptr<ofBaseSoundPlayer> ofSoundPlayer::getPlayer(){
 }
 
 //--------------------------------------------------------------------
-bool ofSoundPlayer::loadSound(string fileName, bool stream){
+bool ofSoundPlayer::load(const std::filesystem::path& fileName, bool stream){
 	if( player ){
-		return player->loadSound(fileName, stream);
+		return player->load(fileName, stream);
 	}
 	return false;
 }
 
 //--------------------------------------------------------------------
-void ofSoundPlayer::unloadSound(){
+bool ofSoundPlayer::loadSound(string fileName, bool stream){
+	return load(fileName,stream);
+}
+
+//--------------------------------------------------------------------
+void ofSoundPlayer::unload(){
 	if( player ){
-		player->unloadSound();
+		player->unload();
 	}
+}
+
+//--------------------------------------------------------------------
+void ofSoundPlayer::unloadSound(){
+	unload();
 }
 
 //--------------------------------------------------------------------
@@ -112,7 +124,7 @@ void ofSoundPlayer::setVolume(float vol){
 //--------------------------------------------------------------------
 void ofSoundPlayer::setPan(float pan){
 	if( player ){
-		player->setPan(CLAMP(pan,-1.0f,1.0f));
+		player->setPan(glm::clamp(pan,-1.0f,1.0f));
 	}
 }
 
@@ -159,7 +171,7 @@ void ofSoundPlayer::setPositionMS(int ms){
 }
 
 //--------------------------------------------------------------------
-float ofSoundPlayer::getPosition(){
+float ofSoundPlayer::getPosition() const{
 	if( player ){
 		return player->getPosition();
 	} else {
@@ -168,7 +180,7 @@ float ofSoundPlayer::getPosition(){
 }
 
 //--------------------------------------------------------------------
-int ofSoundPlayer::getPositionMS(){
+int ofSoundPlayer::getPositionMS() const{
 	if( player ){
 		return player->getPositionMS();
 	} else {
@@ -177,16 +189,21 @@ int ofSoundPlayer::getPositionMS(){
 }
 
 //--------------------------------------------------------------------
-bool ofSoundPlayer::getIsPlaying(){
+bool ofSoundPlayer::isPlaying() const{
 	if( player ){
-		return player->getIsPlaying();
+		return player->isPlaying();
 	} else {
 		return false;
 	}
 }
 
 //--------------------------------------------------------------------
-bool ofSoundPlayer::isLoaded(){
+bool ofSoundPlayer::getIsPlaying() const{
+	return isPlaying();
+}
+
+//--------------------------------------------------------------------
+bool ofSoundPlayer::isLoaded() const{
 	if( player ){
 		return player->isLoaded();
 	} else {
@@ -195,7 +212,7 @@ bool ofSoundPlayer::isLoaded(){
 }
 
 //--------------------------------------------------------------------
-float ofSoundPlayer::getSpeed(){
+float ofSoundPlayer::getSpeed() const{
 	if( player ){
 		return player->getSpeed();
 	} else {
@@ -204,7 +221,7 @@ float ofSoundPlayer::getSpeed(){
 }
 
 //--------------------------------------------------------------------
-float ofSoundPlayer::getPan(){
+float ofSoundPlayer::getPan() const{
 	if( player ){
 		return player->getPan();
 	} else {
@@ -213,7 +230,7 @@ float ofSoundPlayer::getPan(){
 }
 
 //--------------------------------------------------------------------
-float ofSoundPlayer::getVolume(){
+float ofSoundPlayer::getVolume() const{
 	if( player ){
 		return player->getVolume();
 	} else {

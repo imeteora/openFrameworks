@@ -19,7 +19,7 @@ void TriangleApp::setup() {
     if (ofxiOSGetOFWindow()->isRetinaSupportedOnDevice())
         fontSize *= 2;
     
-    font.loadFont("fonts/mono0755.ttf", fontSize);
+    font.load("fonts/mono0755.ttf", fontSize);
 }
 
 //--------------------------------------------------------------
@@ -36,7 +36,7 @@ void TriangleApp::draw() {
     int p = 0;
     
 	ofSetColor(ofColor::red);
-    ofTriangle(x, y - a, x + b, y + b, x - b, y + b);
+    ofDrawTriangle(x, y - a, x + b, y + b, x - b, y + b);
     
     x = ofGetWidth()  * 0.2;
     y = ofGetHeight() * 0.11;

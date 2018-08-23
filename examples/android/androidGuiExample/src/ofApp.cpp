@@ -64,7 +64,7 @@ void ofApp::draw(){
 		ofCircle(center->x-radius*.5, center->y, radius );
 		ofCircle(center->x+radius*.5, center->y, radius );
 	}else{
-		ofCircle((ofVec2f)center, radius );
+		ofCircle(center->x, center->y, radius );
 	}
 	
 	if( bHide ){
@@ -110,6 +110,16 @@ void ofApp::mousePressed(int x, int y, int button){
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
 	
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseEntered(int x, int y){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::mouseExited(int x, int y){
+
 }
 
 //--------------------------------------------------------------

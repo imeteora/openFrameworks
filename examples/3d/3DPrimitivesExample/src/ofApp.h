@@ -15,6 +15,8 @@ public:
 	void mouseDragged(int x, int y, int button);
 	void mousePressed(int x, int y, int button);
 	void mouseReleased(int x, int y, int button);
+	void mouseEntered(int x, int y);
+	void mouseExited(int x, int y);
 	void windowResized(int w, int h);
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
@@ -24,7 +26,7 @@ public:
     bool bDrawNormals;
     bool bDrawAxes;
     bool bDrawLights;
-    bool bInfoText;
+    bool bHelpText;
     bool bMousePressed;
     bool bSplitFaces;
     
@@ -50,5 +52,5 @@ public:
     ofVboMesh topCap, bottomCap, body;
     vector<ofMeshFace> triangles;
     
-
+	ofCamera cam;
 };

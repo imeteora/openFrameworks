@@ -1,5 +1,6 @@
 #include "ofxLabel.h"
 #include "ofGraphics.h"
+using namespace std;
 
 ofxLabel::ofxLabel(ofParameter<string> _label, float width, float height){
 	setup(_label,width,height);
@@ -13,12 +14,12 @@ ofxLabel* ofxLabel::setup(ofParameter<string> _label, float width, float height)
     label.makeReferenceTo(_label);
     b.width  = width;
     b.height = height;
-    generateDraw();
-    label.addListener(this,&ofxLabel::valueChanged);
+    setNeedsRedraw();
+	_label.addListener(this,&ofxLabel::valueChanged);
     return this;
 }
 
-ofxLabel* ofxLabel::setup(string labelName, string _label, float width, float height) {
+ofxLabel* ofxLabel::setup(const std::string& labelName, string _label, float width, float height) {
     label.set(labelName,_label);
     return setup(label,width,height);
 }
@@ -34,8 +35,19 @@ void ofxLabel::generateDraw(){
     if(!getName().empty()){
     	name = getName() + ": ";
     }
-
-    textMesh = getTextMesh(name + (string)label, b.x + textPadding, b.y + b.height / 2 + 4);
+    name += (string)label;    
+    
+    // resize the string inside the max width
+    if(font.isLoaded()){ // using font
+        while( font.stringWidth(name) > (getWidth() - textPadding*2.0f) ){
+            name.resize(name.size()-1);
+        }  
+    }else{ // using bitmap font
+        int max = (getWidth() - textPadding*2.0f) / 8.0f;
+        name.resize(max);
+    } 
+    
+    textMesh = getTextMesh(name, b.x + textPadding, b.y + b.height / 2 + 4);
 }
 
 void ofxLabel::render() {
@@ -64,5 +76,5 @@ ofAbstractParameter & ofxLabel::getParameter(){
 }
 
 void ofxLabel::valueChanged(string & value){
-	generateDraw();
+    setNeedsRedraw();
 }

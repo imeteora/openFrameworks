@@ -1,23 +1,33 @@
 #pragma once
 #include "ofConstants.h"
+#include "ofUtils.h"
 
 class ofTimer {
 public:
+	
+	/// \brief Constructs the default ofTimer().
 	ofTimer();
+
+	/// \brief  Reset the starting instant of the periodic event to now.
 	void reset();
-	void setPeriodicEvent(unsigned long long nanoseconds);
+	
+	/// \brief Sets the frequency in \p nanoseconds that events happen.
+	/// 
+	/// The timer will begin calculating the events beginning the moment
+	/// the function is called.
+	/// \param nanoseconds The number of nanoseconds between events.
+	void setPeriodicEvent(uint64_t nanoseconds);
+	
+	/// \brief Sleep this thread until the next periodic event.
 	void waitNext();
 private:
 	void calculateNextPeriod();
-#if (defined(TARGET_LINUX) && !defined(TARGET_RASPBERRY_PI))
-	timespec nextWakeTime;
-#elif defined(TARGET_WIN32)
+	std::chrono::nanoseconds nanosPerPeriod;
+#if defined(TARGET_WIN32)
 	LARGE_INTEGER nextWakeTime;
 	HANDLE hTimer;
 #else
-	unsigned long long   nextWakeTimeSecs;
-	unsigned long long   nextWakeTimeNanos;
+	ofTime nextWakeTime;
 #endif
-	unsigned long long nanosPerPeriod;
 };
 

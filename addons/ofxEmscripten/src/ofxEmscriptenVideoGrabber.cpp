@@ -8,6 +8,8 @@
 #include "ofxEmscriptenVideoGrabber.h"
 #include "html5video.h"
 
+using namespace std;
+
 enum ReadyState{
 	HAVE_NOTHING = 0,
 	HAVE_METADATA,
@@ -32,7 +34,7 @@ vector<ofVideoDevice> ofxEmscriptenVideoGrabber::listDevices() const{
 	return vector<ofVideoDevice>();
 }
 
-bool ofxEmscriptenVideoGrabber::initGrabber(int w, int h){
+bool ofxEmscriptenVideoGrabber::setup(int w, int h){
 	if(id!=-1){
 		html5video_grabber_init(id,w,h,desiredFramerate);
 		switch(getPixelFormat()){
@@ -61,7 +63,7 @@ bool ofxEmscriptenVideoGrabber::isInitialized() const{
 }
 
 void ofxEmscriptenVideoGrabber::update(){
-	if(html5video_grabber_update(id,usePixels,pixels.getPixels())){
+	if(html5video_grabber_update(id,usePixels,pixels.getData())){
 		texture.texData.width = html5video_grabber_width(id);
 		texture.texData.height = html5video_grabber_height(id);
 		texture.texData.tex_w = texture.texData.width;
@@ -70,13 +72,13 @@ void ofxEmscriptenVideoGrabber::update(){
 			texture.texData.bFlipTexture = false;
 			switch(getPixelFormat()){
 			case OF_PIXELS_RGBA:
-				texture.texData.glTypeInternal = GL_RGBA;
+				texture.texData.glInternalFormat = GL_RGBA;
 				break;
 			case OF_PIXELS_RGB:
-				texture.texData.glTypeInternal = GL_RGB;
+				texture.texData.glInternalFormat = GL_RGB;
 				break;
 			case OF_PIXELS_MONO:
-				texture.texData.glTypeInternal = GL_LUMINANCE;
+				texture.texData.glInternalFormat = GL_LUMINANCE;
 				break;
 			default:
 				ofLogError() << "unknown pixel format, can't allocating texture";

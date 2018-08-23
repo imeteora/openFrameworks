@@ -64,7 +64,7 @@ As with most open source projects, the fastest way to get a feature made is to m
 We are more likely to accept your code if we feel like it has been discussed already. 
 If you are submitting a new feature, it's best if the feature has been discussed beforehand, either as a [feature request](#feature-requests) or on the [forums](http://openframeworks.cc/forums) or the [of-dev mailing list](http://dev.openframeworks.cc/listinfo.cgi/of-dev-openframeworks.cc).
 
-- Please read the [code style guidelines](https://github.com/openframeworks/openFrameworks/wiki/oF-code-style) and make sure your code confirms to them.
+- Please read the [code style guidelines](https://github.com/openframeworks/openFrameworks/wiki/oF-code-style) and make sure your code conforms to them.
 If in doubt, try and match the style and practices you find in the code you are working with.
 - Please write _descriptive commit messages_ for each of the commits that you make.
 They don't have to be in-depth, just a brief summary of what the commit contains. A page describing how well-written commit messages look like can be found [here](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
@@ -75,7 +75,7 @@ They don't have to be in-depth, just a brief summary of what the commit contains
 - Submit from a dedicated branch on your own repository **branched off from current `master`**. Your branch should be only about a single topic or area of openFrameworks. 
 If you have multiple things to submit, make separate branches for each topic and submit multiple pull requests. 
 (This makes it easier to review different parts of your code separately, and get it into the core faster.)
-- The branch name should start with either __feature-__ for features or __fugfix-__ for bug fixes.
+- The branch name should start with either __feature-__ for features or __bugfix-__ for bug fixes.
   - For example, if your patch adds code to draw ellipses, your branch should be called something like __feature-draw-ellipses__.
   - Remember, _commit early, commit often_ - use commits to isolate small subsets of code. 
 This granularity makes the code easier to deal with in cases where some things have to be modified/isolated/removed from the pull request.

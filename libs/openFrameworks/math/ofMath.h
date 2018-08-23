@@ -1,26 +1,18 @@
 #pragma once
 
-#include "ofPoint.h"
 #include "ofConstants.h"
-
-// notes:
-// -----------------------------------------------------------
-// for fast things look here: http://musicdsp.org/archive.php?classid=5#115
-// -----------------------------------------------------------
-// the random () calls are based on misconceptions described here:
-// http://www.azillionmonkeys.com/qed/random.html
-// (Bad advice from C.L.C. FAQ)
-// we should correct this --
-// -----------------------------------------------------------
+#include <cmath>
+#include <glm/gtc/constants.hpp>
+#include <glm/fwd.hpp>
 
 /// \file
 /// ofMath provides a collection of mathematical utilities and functions.
 ///
 /// \warning Many ofRandom-style functions wrap `rand()` which is not reentrant
 /// or thread safe.  To generate random numbers simultaneously in multiple
-/// threads, consider using an instance of Poco::Random in each thread.
+/// threads, consider using c++11 uniform_real_distribution.
 ///
-/// \sa http://pocoproject.org/docs/Poco.Random.html
+/// \sa http://en.cppreference.com/w/cpp/numeric/random/uniform_real_distribution
 
 /// \name Random Numbers
 /// \{
@@ -150,6 +142,9 @@ float ofNormalize(float value, float min, float max);
 /// \param outputMin The lower bound of the output range.
 /// \param outputMax The upper bound of the output range.
 /// \param clamp True if the value should be clamped to [outputMin, outputMax).
+/// \note If the absolute difference between inputMin and inputMax is less than
+///		  FLT_EPSILON, outputMin will be returned to prevent divide by zero
+///		  errors.
 /// \returns a mapped floating point number.
 float ofMap(float value, float inputMin, float inputMax, float outputMin, float outputMax, bool clamp = false);
 
@@ -174,7 +169,7 @@ float ofMap(float value, float inputMin, float inputMax, float outputMin, float 
 /// \returns a floating point number in the range [min, max].
 float ofClamp(float value, float min, float max);
 
-/// \brief Determine if a number is inside of a given range.
+/// \brief Determine if a number is inside of a giv(float)(en range.
 /// \param t The value to test.
 /// \param min The lower bound of the range.
 /// \param max The upper bound of the range.
@@ -221,6 +216,19 @@ float ofLerp(float start, float stop, float amt);
 /// \param y2 Y position of second point.
 /// \returns float Distance between points.
 float ofDist(float x1, float y1, float x2, float y2);
+///
+/// \brief Calculates the 3D distance between two points.
+///
+/// Uses the [Pythagorean theorem](http://en.wikipedia.org/wiki/Pythagorean_theorem).
+///
+/// \param x1 X position of first point.
+/// \param y1 Y position of first point.
+/// \param z1 Z position of first point.
+/// \param x2 X position of second point.
+/// \param y2 Y position of second point.
+/// \param z2 Z position of second point.
+/// \returns float Distance between points.
+float ofDist(float x1, float y1, float z1, float x2, float y2, float z2);
 
 /// \brief Calculates the squared 2D distance between two points.
 ///
@@ -234,6 +242,21 @@ float ofDist(float x1, float y1, float x2, float y2);
 /// \param y2 Y position of second point.
 /// \returns distance-squared between two points.
 float ofDistSquared(float x1, float y1, float x2, float y2);
+
+/// \brief Calculates the squared 3D distance between two points.
+///
+/// Same as ofDist() but doesn't take the square root sqrt() of the result,
+/// which is a faster operation if you need to calculate and compare multiple
+/// distances.
+///
+/// \param x1 X position of first point.
+/// \param y1 Y position of first point.
+/// \param z1 Z position of first point.
+/// \param x2 X position of second point.
+/// \param y2 Y position of second point.
+/// \param z2 Z position of second point.
+/// \returns distance-squared between two points.
+float ofDistSquared(float x1, float y1, float z1, float x2, float y2, float z2);
 
 /// \}
 
@@ -341,7 +364,7 @@ float ofAngleDifferenceRadians(float currentAngle, float targetAngle);
 float ofWrap(float value, float from, float to);
 
 // \brief Convenience function for ofWrap(), constrained between -PI...PI
-float ofWrapRadians(float angle, float from = -PI, float to=+PI);
+float ofWrapRadians(float angle, float from = -glm::pi<float>(), float to=glm::pi<float>());
 
 // \brief Convenience function for ofWrap(), constrained between -180...180
 float ofWrapDegrees(float angle, float from = -180, float to=+180);
@@ -358,11 +381,20 @@ float ofNoise(float x);
 /// \brief Calculates a two dimensional Perlin noise value between 0.0...1.0.
 float ofNoise(float x, float y);
 
+/// \brief Calculates a two dimensional Perlin noise value between 0.0...1.0.
+float ofNoise(const glm::vec2& p);
+
 /// \brief Calculates a three dimensional Perlin noise value between 0.0...1.0.
 float ofNoise(float x, float y, float z);
 
+/// \brief Calculates a three dimensional Perlin noise value between 0.0...1.0.
+float ofNoise(const glm::vec3& p);
+
 /// \brief Calculates a four dimensional Perlin noise value between 0.0...1.0.
 float ofNoise(float x, float y, float z, float w);
+
+/// \brief Calculates a four dimensional Perlin noise value between 0.0...1.0.
+float ofNoise(const glm::vec4& p);
 
 /// \brief Calculates a one dimensional Perlin noise value between -1.0...1.0.
 float ofSignedNoise(float x);
@@ -370,11 +402,20 @@ float ofSignedNoise(float x);
 /// \brief Calculates a two dimensional Perlin noise value between -1.0...1.0.
 float ofSignedNoise(float x, float y);
 
+/// \brief Calculates a two dimensional Perlin noise value between -1.0...1.0.
+float ofSignedNoise(const glm::vec2& p);
+
 /// \brief Calculates a three dimensional Perlin noise value between -1.0...1.0.
 float ofSignedNoise(float x, float y, float z);
 
+/// \brief Calculates a three dimensional Perlin noise value between -1.0...1.0.
+float ofSignedNoise(const glm::vec3& p);
+
 /// \brief Calculates a four dimensional Perlin noise value between -1.0...1.0.
 float ofSignedNoise(float x, float y, float z, float w);
+
+/// \brief Calculates a four dimensional Perlin noise value between -1.0...1.0.
+float ofSignedNoise(const glm::vec4 & p);
 
 /// \}
 
@@ -382,27 +423,43 @@ float ofSignedNoise(float x, float y, float z, float w);
 /// \name Geometry
 /// \{
 
-/// \brief Determine if an (x,y) coordinate is within the polygon defined by a vector of ofPoints.
-/// \param x The x dimension of the coordinate.
-/// \param y The y dimension of the coordinate.
-/// \param poly a vector of ofPoints defining a polygon.
-/// \returns True if the point defined by the coordinates is enclosed, false otherwise.
-bool ofInsidePoly(float x, float y, const vector<ofPoint> & poly);
-
-/// \brief Determine if an ofPoint is within the polygon defined by a vector of ofPoints.
-/// \param p A point to check.
-/// \param poly A vector of ofPoints defining a polygon.
-/// \returns True if the ofPoint is enclosed, false otherwise.
-bool ofInsidePoly(const ofPoint & p, const vector<ofPoint> & poly);
 
 /// \brief Determine the intersection between two lines.
 /// \param line1Start Starting point for first line.
 /// \param line1End End point for first line.
 /// \param line2Start Starting point for second line.
 /// \param line2End End point for second line.
-/// \param intersection ofPoint reference in which to store the computed intersection point.
+/// \param intersection glm::vec3 reference in which to store the computed intersection point.
 /// \returns True if the lines intersect.
-bool ofLineSegmentIntersection(ofPoint line1Start, ofPoint line1End, ofPoint line2Start, ofPoint line2End, ofPoint & intersection);
+template<class vectype>
+bool ofLineSegmentIntersection(const vectype& line1Start, const vectype& line1End, const vectype& line2Start, const vectype& line2End, vectype& intersection){
+	vectype diffLA, diffLB;
+	float compareA, compareB;
+	diffLA = line1End - line1Start;
+	diffLB = line2End - line2Start;
+	compareA = diffLA.x*line1Start.y - diffLA.y*line1Start.x;
+	compareB = diffLB.x*line2Start.y - diffLB.y*line2Start.x;
+	if (
+		(
+			( ( diffLA.x*line2Start.y - diffLA.y*line2Start.x ) < compareA ) ^
+			( ( diffLA.x*line2End.y - diffLA.y*line2End.x ) < compareA )
+		)
+		&&
+		(
+			( ( diffLB.x*line1Start.y - diffLB.y*line1Start.x ) < compareB ) ^
+			( ( diffLB.x*line1End.y - diffLB.y*line1End.x) < compareB )
+		)
+	)
+	{
+		float lDetDivInv = 1 / ((diffLA.x*diffLB.y) - (diffLA.y*diffLB.x));
+		intersection.x =  -((diffLA.x*compareB) - (compareA*diffLB.x)) * lDetDivInv ;
+		intersection.y =  -((diffLA.y*compareB) - (compareA*diffLB.y)) * lDetDivInv ;
+
+		return true;
+	}
+
+	return false;
+}
 
 /// \brief Given the four points that determine a bezier curve, return an interpolated point on the curve.
 /// \param a The beginning point of the curve.
@@ -410,8 +467,12 @@ bool ofLineSegmentIntersection(ofPoint line1Start, ofPoint line1End, ofPoint lin
 /// \param c The second control point.
 /// \param d The end point of the curve.
 /// \param t an offset along the curve, normalized between 0 and 1.
-/// \returns A ofPoint on the curve.
-ofPoint ofBezierPoint( ofPoint a, ofPoint b, ofPoint c, ofPoint d, float t);
+/// \returns A glm::vec3 on the curve.
+template<class vectype>
+vectype ofBezierPoint(const vectype& a, const vectype& b, const vectype& c, const vectype& d, float t){
+	float tp = 1.0f - t;
+	return a*tp*tp*tp + b*3*t*tp*tp + c*3*t*t*tp + d*t*t*t;
+}
 
 /// \brief Given the four points that determine a Catmull Rom curve, return an interpolated point on the curve.
 /// \param a The first control point.
@@ -419,8 +480,22 @@ ofPoint ofBezierPoint( ofPoint a, ofPoint b, ofPoint c, ofPoint d, float t);
 /// \param c The end point of the curve.
 /// \param d The second control point.
 /// \param t an offset along the curve, normalized between 0 and 1.
-/// \returns A ofPoint on the curve.
-ofPoint ofCurvePoint( ofPoint a, ofPoint b, ofPoint c, ofPoint d, float t);
+/// \returns A glm::vec3 on the curve.
+template <class vectype>
+vectype ofCurvePoint(const vectype& a, const vectype& b, const vectype& c, const vectype& d, float t){
+	vectype pt;
+	float t2 = t * t;
+	float t3 = t2 * t;
+	pt.x = 0.5f * ( ( 2.0f * b.x ) +
+				   ( -a.x + c.x ) * t +
+				   ( 2.0f * a.x - 5.0f * b.x + 4 * c.x - d.x ) * t2 +
+				   ( -a.x + 3.0f * b.x - 3.0f * c.x + d.x ) * t3 );
+	pt.y = 0.5f * ( ( 2.0f * b.y ) +
+				   ( -a.y + c.y ) * t +
+				   ( 2.0f * a.y - 5.0f * b.y + 4 * c.y - d.y ) * t2 +
+				   ( -a.y + 3.0f * b.y - 3.0f * c.y + d.y ) * t3 );
+	return pt;
+}
 
 /// Given the four points that determine a bezier curve and an offset along the curve, return an tangent vector to a point on the curve.
 /// Currently this is not a normalized point, and will need to be normalized.
@@ -429,8 +504,11 @@ ofPoint ofCurvePoint( ofPoint a, ofPoint b, ofPoint c, ofPoint d, float t);
 /// \param c The second control point.
 /// \param d The end point of the curve.
 /// \param t an offset along the curve, normalized between 0 and 1.
-/// \returns A ofPoint on the curve.
-ofPoint ofBezierTangent( ofPoint a, ofPoint b, ofPoint c, ofPoint d, float t);
+/// \returns A glm::vec3 on the curve.
+template <class vectype>
+vectype ofBezierTangent(const vectype& a, const vectype& b, const vectype& c, const vectype& d, float t){
+	return (d-a-c*3+b*3)*(t*t)*3 + (a+c-b*2)*t*6 - a*3+b*3;
+}
 
 /// \brief Return a tangent point for an offset along a Catmull Rom curve.
 /// \param a The first control point.
@@ -438,19 +516,25 @@ ofPoint ofBezierTangent( ofPoint a, ofPoint b, ofPoint c, ofPoint d, float t);
 /// \param c The end point of the curve.
 /// \param d The second control point.
 /// \param t an offset along the curve, normalized between 0 and 1.
-/// \returns A ofPoint on the curve.
-ofPoint ofCurveTangent( ofPoint a, ofPoint b, ofPoint c, ofPoint d, float t);
+/// \returns A glm::vec3 on the curve.
+template <class vectype>
+vectype ofCurveTangent(const vectype& a, const vectype& b, const vectype& c, const vectype& d, float t){
+	auto v0 = ( c - a )*0.5;
+	auto v1 = ( d - b )*0.5;
+	return ( b*2 -c*2 + v0 + v1)*(3*t*t) + ( c*3 - b*3 - v1 - v0*2 )*( 2*t) + v0;
+
+}
 
 template<typename Type>
-Type ofInterpolateCosine(Type y1, Type y2, float pct);
+Type ofInterpolateCosine(const Type& y1, const Type& y2, float pct);
 template<typename Type>
-Type ofInterpolateCubic(Type y0, Type y1, Type y2, Type y3, float pct);
+Type ofInterpolateCubic(const Type& y0, const Type& y1, const Type& y2, const Type& y3, float pct);
 template<typename Type>
-Type ofInterpolateCatmullRom(Type y0, Type y1, Type y2, Type y3, float pct);
+Type ofInterpolateCatmullRom(const Type& y0, const Type& y1, const Type& y2, const Type& y3, float pct);
 template<typename Type>
-Type ofInterpolateHermite(Type y0, Type y1, Type y2, Type y3, float pct);
+Type ofInterpolateHermite(const Type& y0, const Type& y1, const Type& y2, const Type& y3, float pct);
 template<typename Type>
-Type ofInterpolateHermite(Type y0, Type y1, Type y2, Type y3, float pct, float tension, float bias);
+Type ofInterpolateHermite(const Type& y0, const Type& y1, const Type& y2, const Type& y3, float pct, float tension, float bias);
 
 /// \}
 
@@ -477,6 +561,30 @@ int ofNextPow2(int a);
 /// \returns int -1 if n is negative, 1 if n is positive, and 0 is n == 0;
 int ofSign(float n);
 
+/// \brief Compare two floating point types for equality.
+///
+/// From C++ FAQ:
+///
+/// Floating point arithmetic is different from real number arithmetic.
+/// Never use `==` to compare two floating point numbers.
+///
+/// This solution is not completely symmetric, meaning it is possible for
+/// `ofIsFloatEqual(x, y) != ofIsFloatEqual(y, x)`. From a practical
+/// standpoint, this does not usually occur when the magnitudes of x and y are
+/// significantly larger than epsilon, but your mileage may vary.
+///
+/// \sa https://isocpp.org/wiki/faq/newbie#floating-point-arith
+/// \sa https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html
+/// \tparam The floating point data type.
+/// \param a The first floating point type variable to compare.
+/// \param b The second floating point type variable to compare.
+/// \returns True if `std::abs(x - y) <= std::numeric_limits<Type>::epsilon() * std::abs(x)`.
+template<typename Type>
+typename std::enable_if<std::is_floating_point<Type>::value, bool>::type ofIsFloatEqual(const Type& a, const Type& b)
+{
+	return std::abs(a - b) <= std::numeric_limits<Type>::epsilon() * std::abs(a);
+}
+
 /// \}
 
 
@@ -485,17 +593,17 @@ int ofSign(float n);
 // from http://paulbourke.net/miscellaneous/interpolation/
 //--------------------------------------------------
 template<typename Type>
-Type ofInterpolateCosine(Type y1, Type y2, float pct){
+Type ofInterpolateCosine(const Type& y1, const Type& y2, float pct){
 	float pct2;
 
-	pct2 = (1-cos(pct*PI))/2;
+	pct2 = (1-cos(pct*glm::pi<float>()))/2;
 	return(y1*(1-pct2)+y2*pct2);
 }
 
 // from http://paulbourke.net/miscellaneous/interpolation/
 //--------------------------------------------------
 template<typename Type>
-Type ofInterpolateCubic(Type y0, Type y1, Type y2, Type y3, float pct){
+Type ofInterpolateCubic(const Type& y0, const Type& y1, const Type& y2, const Type& y3, float pct){
 	Type a0,a1,a2,a3;
 	float pct2;
 
@@ -511,7 +619,7 @@ Type ofInterpolateCubic(Type y0, Type y1, Type y2, Type y3, float pct){
 // from http://paulbourke.net/miscellaneous/interpolation/
 //--------------------------------------------------
 template<typename Type>
-Type ofInterpolateCatmullRom(Type y0, Type y1, Type y2, Type y3, float pct){
+Type ofInterpolateCatmullRom(const Type& y0, const Type& y1, const Type& y2, const Type& y3, float pct){
 	Type a0,a1,a2,a3;
 	float pct2 = pct*pct;
 	a0 = -0.5*y0 + 1.5*y1 - 1.5*y2 + 0.5*y3;
@@ -525,7 +633,7 @@ Type ofInterpolateCatmullRom(Type y0, Type y1, Type y2, Type y3, float pct){
 // laurent de soras
 //--------------------------------------------------
 template<typename Type>
-inline Type ofInterpolateHermite(Type y0, Type y1, Type y2, Type y3, float pct){
+inline Type ofInterpolateHermite(const Type& y0, const Type& y1, const Type& y2, const Type& y3, float pct){
 	const Type c = (y2 - y0) * 0.5f;
 	const Type v = y1 - y2;
 	const Type w = c + v;
@@ -538,7 +646,7 @@ inline Type ofInterpolateHermite(Type y0, Type y1, Type y2, Type y3, float pct){
 // from http://paulbourke.net/miscellaneous/interpolation/
 //--------------------------------------------------
 template<typename Type>
-Type ofInterpolateHermite(Type y0, Type y1, Type y2, Type y3, float pct, float tension, float bias){
+Type ofInterpolateHermite(const Type& y0, const Type& y1, const Type& y2, const Type& y3, float pct, float tension, float bias){
 	float pct2,pct3;
 	Type m0,m1;
 	Type a0,a1,a2,a3;
